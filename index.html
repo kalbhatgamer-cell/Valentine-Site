@@ -1,0 +1,1990 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Kalb Message</title>
+<!-- Call System Update: robust remote video + ICE candidate handling -->
+<meta name="theme-color" content="#050816">
+<style>
+*{margin:0;padding:0;box-sizing:border-box;font-family:Arial,sans-serif}
+body{min-height:100vh;background:#050816;color:#fff;overflow-x:hidden;padding-bottom:94px}
+.bg{position:fixed;inset:-45%;z-index:-1;background:radial-gradient(circle at 25% 25%,rgba(124,58,237,.55),transparent 33%),radial-gradient(circle at 80% 70%,rgba(6,182,212,.45),transparent 35%),radial-gradient(circle at 50% 55%,rgba(34,197,94,.25),transparent 40%);filter:blur(80px);animation:bgspin 18s linear infinite}
+@keyframes bgspin{to{transform:rotate(360deg)}}
+#loader{position:fixed;inset:0;background:radial-gradient(circle at top,#121a33,#050816 70%);z-index:99999;display:flex;align-items:center;justify-content:center;flex-direction:column}
+.loader-logo{width:105px;height:105px;border-radius:30px;background:linear-gradient(135deg,#06b6d4,#8b5cf6,#ec4899);display:flex;align-items:center;justify-content:center;font-size:52px;box-shadow:0 0 45px rgba(139,92,246,.9);animation:pulse 1.4s infinite}
+@keyframes pulse{50%{transform:scale(1.07)}}
+.loader-title{font-size:26px;font-weight:800;margin-top:18px}.loader-sub{font-size:13px;color:#9ca3af;margin-top:6px}
+.app{width:100%;max-width:540px;margin:auto;padding:16px}
+.top{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:16px}
+.brand h1{font-size:22px;line-height:1.05}.brand span{color:#67e8f9}.muted{color:#a3a3a3;font-size:13px}
+.icon-btn{width:45px;height:45px;border-radius:16px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.07);color:white;font-size:22px;display:flex;align-items:center;justify-content:center;cursor:pointer}
+.plus-top{background:linear-gradient(135deg,#22c55e,#06b6d4);box-shadow:0 0 20px rgba(6,182,212,.45)}
+.page{display:none}.page.active{display:block}
+.card{background:rgba(255,255,255,.065);border:1px solid rgba(139,92,246,.3);border-radius:22px;padding:16px;margin-bottom:14px;box-shadow:0 0 24px rgba(139,92,246,.14);backdrop-filter:blur(10px)}
+.big-title{font-size:25px;margin-bottom:8px}
+input,textarea{width:100%;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);border-radius:16px;color:white;padding:13px;margin-top:10px;outline:none;font-size:15px}
+textarea{resize:none;min-height:70px}
+.btn{border:0;border-radius:15px;padding:12px 14px;margin-top:10px;background:linear-gradient(90deg,#8b5cf6,#06b6d4);color:white;font-weight:800;cursor:pointer}
+.btn.full{width:100%}.btn.red{background:linear-gradient(90deg,#ef4444,#f97316)}.btn.green{background:linear-gradient(90deg,#22c55e,#06b6d4)}.btn.small{padding:9px 10px;font-size:12px;margin-top:0}
+.notice{padding:11px;border-radius:16px;background:rgba(34,197,94,.12);border:1px solid rgba(34,197,94,.25);color:#bbf7d0;margin-top:10px;font-size:13px}.err{background:rgba(239,68,68,.14);border-color:rgba(239,68,68,.3);color:#fecaca}
+.stats{display:grid;grid-template-columns:1fr 1fr;gap:12px}.stat{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:18px;padding:14px}.stat b{font-size:24px;color:#67e8f9}.stat p{font-size:12px;color:#aaa;margin-top:4px}
+.avatar{width:52px;height:52px;border-radius:50%;background:linear-gradient(135deg,#8b5cf6,#06b6d4);display:flex;align-items:center;justify-content:center;font-weight:900;font-size:20px;flex-shrink:0}
+.user-row,.chat-row{display:flex;align-items:center;gap:12px}.user-info,.chat-info{flex:1;min-width:0}.user-info h3,.chat-info h3{font-size:16px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.user-info p,.chat-info p{font-size:12px;color:#aaa;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.status-pill{display:inline-flex;align-items:center;gap:6px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.06);border-radius:999px;padding:7px 10px;font-size:12px;color:#d1d5db}.dot{width:9px;height:9px;border-radius:50%;background:#6b7280}.dot.on{background:#22c55e;box-shadow:0 0 12px #22c55e}
+.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+.message-box{height:55vh;overflow-y:auto;padding:10px;background:rgba(255,255,255,.035);border-radius:20px;border:1px solid rgba(255,255,255,.08)}
+.msg{max-width:82%;padding:11px 13px;border-radius:18px;margin:8px 0;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.08);position:relative;word-break:break-word}
+.msg.me{margin-left:auto;background:linear-gradient(135deg,rgba(139,92,246,.55),rgba(6,182,212,.35))}
+.msg-name{font-size:11px;color:#67e8f9;margin-bottom:4px}.msg-reply{font-size:12px;color:#ddd;border-left:3px solid #67e8f9;padding:5px 7px;margin-bottom:7px;background:rgba(255,255,255,.06);border-radius:8px}
+.msg-time{font-size:10px;color:#bbb;margin-top:5px;text-align:right}.msg-tools{display:flex;gap:6px;justify-content:flex-end;margin-top:6px}.toolbtn{border:0;border-radius:9px;background:rgba(255,255,255,.13);color:white;font-size:11px;padding:5px 7px;cursor:pointer}
+.sendbar{display:flex;gap:8px;align-items:center}.sendbar input{margin-top:0}.sendbar button{margin-top:0;min-width:58px}
+.replybar{display:none;margin-bottom:10px;padding:10px;border-radius:15px;background:rgba(103,232,249,.12);border:1px solid rgba(103,232,249,.25);font-size:13px}.replybar.active{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.bottom{position:fixed;left:50%;bottom:10px;transform:translateX(-50%);width:94%;max-width:540px;background:rgba(7,11,24,.96);border:1px solid rgba(255,255,255,.12);border-radius:24px;display:none;align-items:center;justify-content:space-around;padding:10px;z-index:100}
+.nav{color:#9ca3af;text-align:center;font-size:10px;cursor:pointer;min-width:56px}.nav div{font-size:22px;margin-bottom:3px}.nav.active{color:#67e8f9}
+.badge{display:inline-block;min-width:18px;height:18px;border-radius:9px;background:#ef4444;color:white;font-size:11px;line-height:18px;text-align:center;margin-left:4px}
+.call-panel{display:grid;grid-template-columns:1fr 1fr;gap:10px}.call-video-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}.call-video-grid video{width:100%;height:180px;background:#000;border-radius:18px;object-fit:cover;border:1px solid rgba(255,255,255,.12)}
+.post-box{background:rgba(255,255,255,.06);border:1px solid rgba(139,92,246,.28);border-radius:20px;padding:14px;margin-bottom:14px}
+.post-head{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.post-text{font-size:15px;line-height:1.45;white-space:pre-wrap;margin:10px 0}
+.post-actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:10px}
+.group-member{display:flex;align-items:center;gap:8px;padding:8px;border-radius:12px;background:rgba(255,255,255,.05);margin-top:7px}
+.group-member input{width:auto;margin:0}
+.call-history-item{padding:10px;border-radius:14px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.08);margin-top:8px;font-size:13px}
+.incoming-call{display:none;padding:14px;border-radius:18px;background:rgba(34,197,94,.14);border:1px solid rgba(34,197,94,.35);margin-top:12px}
+.incoming-call.active{display:block}
+.comment-box{margin-top:10px;border-top:1px solid rgba(255,255,255,.1);padding-top:10px}
+.comment{font-size:13px;background:rgba(255,255,255,.06);border-radius:12px;padding:8px;margin-top:6px}
+.typing{color:#67e8f9;font-size:12px;margin-top:5px;min-height:16px}
+.admin-grid{display:grid;grid-template-columns:1fr;gap:10px}
+.admin-item{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:16px;padding:12px;margin-bottom:10px}
+.admin-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+
+.color-row{display:flex;gap:10px;flex-wrap:wrap;margin-top:10px}
+.color-dot{width:34px;height:34px;border-radius:50%;border:2px solid rgba(255,255,255,.35);cursor:pointer}
+.emoji-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.emoji-pick{width:38px;height:38px;border-radius:14px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.08);font-size:21px;cursor:pointer}
+.profile-stats{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-top:12px}
+.profile-stat{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:16px;padding:10px;text-align:center}
+.profile-stat b{font-size:19px;color:#67e8f9}
+.filter-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.badge-soft{display:inline-block;border-radius:999px;background:rgba(103,232,249,.14);border:1px solid rgba(103,232,249,.25);padding:5px 9px;font-size:11px;color:#bff7ff;margin-top:6px}
+
+
+.profile-view-card{text-align:center}
+.emoji-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.emoji-pick{width:38px;height:38px;border-radius:14px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.08);font-size:21px;cursor:pointer}
+.color-row{display:flex;gap:10px;flex-wrap:wrap;margin-top:10px}
+.color-dot{width:34px;height:34px;border-radius:50%;border:2px solid rgba(255,255,255,.35);cursor:pointer}
+.profile-stats{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-top:12px}
+.profile-stat{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:16px;padding:10px;text-align:center}
+.profile-stat b{font-size:19px;color:#67e8f9}
+.call-request{background:rgba(34,197,94,.14);border:1px solid rgba(34,197,94,.35);border-radius:18px;padding:12px;margin-top:10px}
+.follow-stats{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-top:14px}
+.follow-stat{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:16px;padding:10px;text-align:center}
+.follow-stat b{font-size:20px;color:#67e8f9}
+.profile-action-row{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:14px}
+.feed-profile-btn{background:transparent;border:0;color:#67e8f9;cursor:pointer;font-size:12px;padding:0;margin-top:3px}
+.empty{text-align:center;color:#aaa;padding:25px}.hidden{display:none!important}
+
+.profile-stats-wide{grid-template-columns:repeat(5,1fr)}
+.follow-mini{font-size:12px;color:#67e8f9;margin-top:3px}
+.follow-btn-on{background:linear-gradient(135deg,#22c55e,#06b6d4)!important}
+@media(max-width:520px){.profile-stats-wide{grid-template-columns:repeat(2,1fr)}}
+</style>
+</head>
+<body>
+<div class="bg"></div>
+<div id="loader"><div class="loader-logo">💬</div><div class="loader-title">Kalb Message</div><div class="loader-sub">Loading stable chat app</div></div>
+
+<div class="app">
+  <div class="top">
+    <button class="icon-btn" onclick="openPage('profilePage')">☰</button>
+    <div class="brand"><h1>Kalb <span>Message</span></h1><p class="muted">WhatsApp-style private chat</p></div>
+    <button class="icon-btn plus-top" onclick="openPage('usersPage')">+</button>
+  </div>
+
+  <div id="authPage" class="page active">
+    <div class="card">
+      <h2 class="big-title">Welcome back</h2>
+      <p class="muted">Login or create an account to start chatting.</p>
+      <button class="btn full" onclick="googleLogin()">Continue with Google</button>
+      <div id="authStatus"></div>
+    </div>
+    <div class="card">
+      <h3>Email account</h3>
+      <input id="authEmail" type="email" placeholder="Email">
+      <input id="authPassword" type="password" placeholder="Password, minimum 6 characters">
+      <button class="btn full" onclick="emailLogin()">Login</button>
+      <button class="btn full green" onclick="emailSignup()">Create Account</button>
+    </div>
+  </div>
+
+  <div id="homePage" class="page">
+    <div class="card">
+      <h2 class="big-title">Dashboard</h2>
+      <p class="muted">Home feed is here. The bottom Feed tab is removed, and top + opens user search.</p>
+      <div class="stats" style="margin-top:14px">
+        <div class="stat"><b id="totalUsers">0</b><p>Total users</p></div>
+        <div class="stat"><b id="onlineUsersCount">0</b><p>Online now</p></div>
+      </div>
+      <div class="notice">Tap the <b>+</b> button at the top to search users and start a private chat.</div>
+    </div>
+    <div class="card">
+      <h3>Your account</h3>
+      <p id="homeUser" class="muted" style="margin-top:8px">Not logged in</p>
+      <button class="btn" onclick="openPage('usersPage')">Find Users</button>
+      <button class="btn" onclick="openPage('chatsPage')">Open Chats</button>
+    </div>
+
+    <div class="card">
+      <h2 class="big-title">Live Feed</h2>
+      <p class="muted">Recent posts from users.</p>
+      <textarea id="homePostText" placeholder="Write a quick post..."></textarea>
+      <button class="btn full green" onclick="createPostFromHome()">Post</button>
+      <div class="filter-row">
+        <button class="btn small" onclick="feedFilter='new';renderPosts()">Newest</button>
+        <button class="btn small" onclick="feedFilter='trending';renderPosts()">Trending</button>
+        <button class="btn small" onclick="feedFilter='saved';renderPosts()">Saved</button>
+        <button class="btn small" onclick="feedFilter='mine';renderPosts()">My Posts</button>
+      </div>
+    </div>
+    <div id="homeFeedBox"></div>
+
+  </div>
+
+  <div id="usersPage" class="page">
+    <div class="card">
+      <h2 class="big-title">Users</h2>
+      <p class="muted">Search users by name, username, or email.</p>
+      <input id="userSearch" placeholder="Search users..." oninput="renderUsers()">
+    </div>
+    <div id="usersList"></div>
+  </div>
+
+  <div id="chatsPage" class="page">
+    <div class="card">
+      <h2 class="big-title">Chats</h2>
+      <p class="muted">Recent chats are sorted by latest message.</p>
+      <input id="chatSearchInput" placeholder="Search chats..." oninput="renderChatListCache()">
+      <div class="filter-row">
+        <button class="btn small" onclick="chatFilter='all';renderChatListCache()">All</button>
+        <button class="btn small" onclick="chatFilter='pinned';renderChatListCache()">Pinned</button>
+        <button class="btn small" onclick="chatFilter='archived';renderChatListCache()">Archived</button>
+      </div>
+    </div>
+    <div id="chatList"></div>
+  </div>
+
+  <div id="chatRoomPage" class="page">
+    <div class="card">
+      <button class="btn small" onclick="openPage('chatsPage')">← Back</button>
+      <h2 id="roomTitle" style="margin-top:10px">Chat</h2>
+      <p id="roomSub" class="muted"></p>
+      <div id="typingIndicator" class="typing"></div>
+      <div class="chat-tools">
+        <button class="btn small" onclick="pinCurrentChat()">Pin</button>
+        <button class="btn small" onclick="archiveCurrentChat()">Archive</button>
+        <button class="btn small red" onclick="clearCurrentChat()">Clear</button>
+      </div>
+    </div>
+    <div id="messagesBox" class="message-box"></div>
+    <div class="card">
+      <div id="replyBar" class="replybar"><span id="replyText"></span><button class="toolbtn" onclick="cancelReply()">×</button></div>
+      <div class="sendbar">
+        <input id="messageInput" placeholder="Type message..." oninput="sendTypingStatus()" onkeydown="if(event.key==='Enter')sendPrivateChat()">
+        <button class="btn" onclick="sendPrivateChat()">Send</button>
+      </div>
+      <div class="card" style="margin-top:14px">
+        <h3>Call History</h3>
+        <div id="callHistoryBox"></div>
+      </div>
+    </div>
+  </div>
+
+
+
+  <div id="groupsPage" class="page">
+    <div class="card">
+      <h2 class="big-title">Groups</h2>
+      <p class="muted">Create WhatsApp/Telegram-style groups and chat with members.</p>
+      <button class="btn full green" onclick="openPage('createGroupPage')">Create New Group</button>
+    </div>
+    <div id="groupsList"></div>
+  </div>
+
+  <div id="createGroupPage" class="page">
+    <div class="card">
+      <button class="btn small" onclick="openPage('groupsPage')">← Back</button>
+      <h2 class="big-title" style="margin-top:10px">Create Group</h2>
+      <input id="groupNameInput" placeholder="Group name">
+      <textarea id="groupDescInput" placeholder="Group description"></textarea>
+      <h3 style="margin-top:12px">Add Members</h3>
+      <div id="groupMembersPick"></div>
+      <button class="btn full green" onclick="createGroup()">Create Group</button>
+      <div id="groupCreateStatus"></div>
+    </div>
+  </div>
+
+  <div id="groupRoomPage" class="page">
+    <div class="card">
+      <button class="btn small" onclick="openPage('groupsPage')">← Back</button>
+      <h2 id="groupRoomTitle" style="margin-top:10px">Group</h2>
+      <p id="groupRoomSub" class="muted"></p>
+      <div class="actions">
+        <button class="btn small" onclick="showGroupInfo()">Group Info</button>
+        <button class="btn small red" onclick="leaveGroup()">Leave Group</button>
+      </div>
+    </div>
+    <div id="groupInfoBox" class="card hidden"></div>
+    <div id="groupMessagesBox" class="message-box"></div>
+    <div class="card sendbar">
+      <input id="groupMessageInput" placeholder="Type group message..." onkeydown="if(event.key==='Enter')sendGroupMessage()">
+      <button class="btn" onclick="sendGroupMessage()">Send</button>
+    </div>
+  </div>
+
+  <div id="feedPage" class="page">
+    <div class="card">
+      <h2 class="big-title">Posts Feed</h2>
+      <p class="muted">Share text posts like Facebook. Users can like and comment.</p>
+      <textarea id="postText" placeholder="What's on your mind?"></textarea>
+      <button class="btn full green" onclick="createPost()">Post</button>
+      <div id="postStatus"></div>
+    </div>
+    <div id="postsBox"></div>
+  </div>
+
+  <div id="callsPage" class="page">
+    <div class="card">
+      <h2 class="big-title">Voice & Video Calls</h2>
+      <p class="muted">Direct call a user, or keep using Room ID calls. For best result, both users should keep this page open and allow camera/microphone permission.</p>
+      <div class="card" style="margin:12px 0;background:rgba(255,255,255,.04)">
+        <h3>Direct Call Users</h3>
+        <input id="callUserSearch" placeholder="Search user to call..." oninput="renderCallUsersList()">
+        <div id="callUsersList" style="margin-top:10px"></div>
+      </div>
+      <input id="callRoomId" placeholder="Room ID">
+      <div class="call-panel">
+        <button class="btn green" onclick="createVideoCall()">Create Video</button>
+        <button class="btn" onclick="createVoiceCall()">Create Voice</button>
+        <button class="btn" onclick="joinCallRoom()">Join Room</button>
+        <button class="btn" onclick="toggleMute()" id="muteBtn">Mute Mic</button>
+        <button class="btn" onclick="toggleCamera()" id="cameraBtn">Camera Off</button>
+        <button class="btn red" onclick="hangupCall()">Hang Up</button>
+      </div>
+      <div id="realCallRequestsBox"></div>
+      <div id="incomingCallBox" class="incoming-call">
+        <b id="incomingCallText">Incoming call</b>
+        <div class="actions">
+          <button class="btn small green" onclick="acceptIncomingCall()">Accept</button>
+          <button class="btn small red" onclick="rejectIncomingCall()">Reject</button>
+        </div>
+      </div>
+      <div id="callStatus" class="notice">Call is ready.</div>
+      <div id="callTimer" class="notice">Call timer: 00:00</div>
+      <div id="callHelpText" class="notice">Tip: Caller taps Video/Voice. Receiver taps Accept. Keep both phones on the call page for 5-10 seconds.</div>
+      <button class="btn full" onclick="fakeIncomingCall()">Test Incoming Call Screen</button>
+      <div class="call-video-grid">
+        <div><p class="muted" style="margin-bottom:6px">You</p><video id="localVideo" autoplay muted playsinline></video></div>
+        <div><p class="muted" style="margin-bottom:6px">Other User</p><video id="remoteVideo" autoplay playsinline></video></div>
+      </div>
+    </div>
+  </div>
+
+
+
+  <div id="viewProfilePage" class="page">
+    <div class="card profile-view-card">
+      <button class="btn small" onclick="openPage('usersPage')">← Back</button>
+      <div class="avatar" id="viewProfileAvatar" style="width:90px;height:90px;margin:12px auto;font-size:36px">U</div>
+      <h2 id="viewProfileName">User</h2>
+      <p id="viewProfileUsername" class="muted"></p>
+      <p id="viewProfileEmail" class="muted"></p>
+      <p id="viewProfileBio" class="muted" style="margin-top:8px"></p>
+      <p id="viewProfileLastSeen" class="muted"></p>
+
+      <div class="follow-stats">
+        <div class="follow-stat"><b id="viewFollowersCount">0</b><p class="muted">Followers</p></div>
+        <div class="follow-stat"><b id="viewFollowingCount">0</b><p class="muted">Following</p></div>
+        <div class="follow-stat"><b id="viewPostsCount">0</b><p class="muted">Posts</p></div>
+      </div>
+
+      <div id="viewFollowList" class="muted" style="margin-top:12px"></div>
+
+      <div class="profile-action-row">
+        <button id="viewFollowBtn" class="btn small green" onclick="toggleFollowViewedProfile()">Follow</button>
+        <button class="btn small" onclick="messageViewedProfile()">Message</button>
+        <button class="btn small green" onclick="callViewedProfile()">Open Call</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="adminPage" class="page">
+    <div class="card">
+      <h2 class="big-title">Admin Panel</h2>
+      <p class="muted">Only admin can control users, posts, groups, reports, and announcements.</p>
+      <textarea id="announcementText" placeholder="Write announcement for all users..."></textarea>
+      <button class="btn full green" onclick="sendAnnouncement()">Send Announcement</button>
+      <div id="adminStatus"></div>
+    </div>
+
+    <div class="card">
+      <h3>Users Control</h3>
+      <div id="adminUsersBox"></div>
+    </div>
+
+    <div class="card">
+      <h3>Reports</h3>
+      <div id="adminReportsBox"></div>
+    </div>
+
+    <div class="card">
+      <h3>Posts Control</h3>
+      <div id="adminPostsBox"></div>
+    </div>
+
+    <div class="card">
+      <h3>Groups Control</h3>
+      <div id="adminGroupsBox"></div>
+    </div>
+  </div>
+
+  <div id="profilePage" class="page">
+    <div class="card" style="text-align:center">
+      <div class="avatar" style="width:88px;height:88px;margin:auto;font-size:34px" id="profileAvatar">U</div>
+      <h2 id="profileDisplayName" style="margin-top:12px">User</h2>
+      <p id="profileEmail" class="muted"></p>
+      <p id="profileJoined" class="muted"></p>
+      <div class="profile-stats profile-stats-wide">
+        <div class="profile-stat"><b id="profilePostsCount">0</b><p class="muted">Posts</p></div>
+        <div class="profile-stat"><b id="profileFollowersCount">0</b><p class="muted">Followers</p></div>
+        <div class="profile-stat"><b id="profileFollowingCount">0</b><p class="muted">Following</p></div>
+        <div class="profile-stat"><b id="profileChatsCount">0</b><p class="muted">Chats</p></div>
+        <div class="profile-stat"><b id="profileGroupsCount">0</b><p class="muted">Groups</p></div>
+      </div>
+    </div>
+    <div class="card">
+      <h3>Edit profile</h3>
+      <input id="profileName" placeholder="Display name">
+      <input id="profileUsername" placeholder="Username">
+      <textarea id="profileBio" placeholder="Bio or status"></textarea>
+      <h3 style="margin-top:14px">Emoji Avatar</h3>
+      <div class="emoji-row">
+        <button class="emoji-pick" onclick="setAvatarEmoji('😀')">😀</button>
+        <button class="emoji-pick" onclick="setAvatarEmoji('😎')">😎</button>
+        <button class="emoji-pick" onclick="setAvatarEmoji('🔥')">🔥</button>
+        <button class="emoji-pick" onclick="setAvatarEmoji('⚡')">⚡</button>
+        <button class="emoji-pick" onclick="setAvatarEmoji('💎')">💎</button>
+        <button class="emoji-pick" onclick="setAvatarEmoji('🚀')">🚀</button>
+      </div>
+      <h3 style="margin-top:14px">Avatar Color</h3>
+      <div class="color-row">
+        <span class="color-dot" style="background:linear-gradient(135deg,#8b5cf6,#06b6d4)" onclick="setAvatarColor('purpleBlue')"></span>
+        <span class="color-dot" style="background:linear-gradient(135deg,#22c55e,#06b6d4)" onclick="setAvatarColor('greenCyan')"></span>
+        <span class="color-dot" style="background:linear-gradient(135deg,#f97316,#ef4444)" onclick="setAvatarColor('orangeRed')"></span>
+        <span class="color-dot" style="background:linear-gradient(135deg,#ec4899,#8b5cf6)" onclick="setAvatarColor('pinkPurple')"></span>
+        <span class="color-dot" style="background:linear-gradient(135deg,#facc15,#22c55e)" onclick="setAvatarColor('yellowGreen')"></span>
+      </div>
+      <button class="btn full" onclick="saveProfile()">Save Profile</button>
+      
+      <button id="profileAdminBtn" class="btn full hidden" onclick="openPage('adminPage')">Open Admin Panel</button>
+      <button class="btn full red" onclick="logout()">Logout</button>
+      <div id="profileStatus"></div>
+    </div>
+  </div>
+</div>
+
+<div class="bottom" id="bottomNav">
+  <div class="nav active" onclick="openPage('homePage',this)"><div>⌂</div>Home</div>
+  <div class="nav" onclick="openPage('chatsPage',this)"><div>💬<span id="unreadBadge" class="badge hidden">0</span></div>Chats</div>
+  <div class="nav" onclick="openPage('groupsPage',this)"><div>👥</div>Groups</div>
+  <div class="nav" onclick="openPage('callsPage',this)"><div>📞</div>Calls</div>
+  <div class="nav admin-nav hidden" onclick="openPage('adminPage',this)"><div>🛡</div>Admin</div>
+  <div class="nav" onclick="openPage('profilePage',this)"><div>👤</div>Profile</div>
+</div>
+
+<script>
+window.addEventListener("load",function(){setTimeout(function(){document.getElementById("loader").style.display="none"},800)});
+</script>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import {
+  getFirestore, doc, setDoc, getDoc, collection, addDoc, onSnapshot,
+  query, orderBy, serverTimestamp, updateDoc, where, deleteDoc, writeBatch, getDocs
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import {
+  getAuth, GoogleAuthProvider, signInWithPopup, createUserWithEmailAndPassword,
+  signInWithEmailAndPassword, signOut, onAuthStateChanged, updateProfile
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyD80d4bZpZZp0JRZeaBwQKG5GapwLJVki8",
+  authDomain: "kalb-message.firebaseapp.com",
+  projectId: "kalb-message",
+  storageBucket: "kalb-message.firebasestorage.app",
+  messagingSenderId: "139873273901",
+  appId: "1:139873273901:web:c7c079d385daeb3401d0a4",
+  measurementId: "G-C9S0K1SG0D"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+const auth = getAuth(app);
+const provider = new GoogleAuthProvider();
+if("serviceWorker" in navigator){navigator.serviceWorker.getRegistrations().then(rs=>rs.forEach(r=>r.unregister())).catch(()=>{});}
+
+let currentUser = null;
+let allUsers = [];
+let onlineMap = {};
+let currentChatId = "";
+let currentChatUser = null;
+let unsubscribeMessages = null;
+let unsubscribeTyping = null;
+let unsubscribeChats = null;
+let unsubscribePosts = null;
+let typingTimer = null;
+let allPosts = [];
+let feedFilter = 'new';
+let chatFilter = 'all';
+let profileAvatarEmoji = '😀';
+let profileAvatarColor = 'purpleBlue';
+let allGroups = [];
+let allReports = [];
+let allAnnouncements = [];
+const ADMIN_EMAIL = 'kalbhatgamer@gmail.com';
+let currentGroupId = '';
+let currentGroup = null;
+let unsubscribeGroups = null;
+let unsubscribeGroupMessages = null;
+let callTimerInterval = null;
+let callStartTime = null;
+let currentReply = null;
+let unreadTotal = 0;
+let currentUserProfile = null;
+let viewedProfileUser = null;
+let unsubscribeCallRequests = null;
+let unsubscribeOutgoingCalls = null;
+
+let pc = null;
+let localStream = null;
+let remoteStream = null;
+let currentRoomRef = null;
+let currentRoomId = "";
+let callUnsubs = [];
+let pendingRemoteCandidates = [];
+let remoteVideoStarted = false;
+const rtcServers = { iceServers: [{ urls: ["stun:stun.l.google.com:19302","stun:stun1.l.google.com:19302","stun:stun2.l.google.com:19302"] }] };
+
+function showStatus(id,text,error=false){
+  const el=document.getElementById(id);
+  if(el) el.innerHTML='<div class="notice '+(error?'err':'')+'">'+safe(text)+'</div>';
+}
+function safe(value){
+  return String(value||"").replace(/[&<>"']/g,function(m){return {"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#039;"}[m]});
+}
+function initials(name,email){return String(name||email||"User").trim().charAt(0).toUpperCase()}
+function chatIdFor(a,b){return [a,b].sort().join("_")}
+function formatTime(ts){try{return ts&&ts.toDate?ts.toDate().toLocaleTimeString([], {hour:"2-digit",minute:"2-digit"}):""}catch(e){return ""}}
+function formatDate(ts){try{return ts&&ts.toDate?ts.toDate().toLocaleString():""}catch(e){return ""}}
+function lastSeenText(uid){
+  const data = onlineMap[uid];
+  if(data && data.online === true) return "Online";
+  if(data && data.lastSeen && data.lastSeen.toDate) return "Last seen " + data.lastSeen.toDate().toLocaleString();
+  return "Offline";
+}
+
+
+
+function avatarStyle(color){
+  const map={
+    purpleBlue:"linear-gradient(135deg,#8b5cf6,#06b6d4)",
+    greenCyan:"linear-gradient(135deg,#22c55e,#06b6d4)",
+    orangeRed:"linear-gradient(135deg,#f97316,#ef4444)",
+    pinkPurple:"linear-gradient(135deg,#ec4899,#8b5cf6)",
+    yellowGreen:"linear-gradient(135deg,#facc15,#22c55e)"
+  };
+  return map[color] || map.purpleBlue;
+}
+function getChatMeta(chatId){
+  const data=JSON.parse(localStorage.getItem("kalbChatMeta")||"{}");
+  return data[chatId]||{};
+}
+function setChatMeta(chatId,patch){
+  const data=JSON.parse(localStorage.getItem("kalbChatMeta")||"{}");
+  data[chatId]={...(data[chatId]||{}),...patch};
+  localStorage.setItem("kalbChatMeta",JSON.stringify(data));
+}
+
+async function isCurrentUserBanned(){
+  if(!currentUser) return true;
+  try{
+    const snap = await getDoc(doc(db,"users",currentUser.uid));
+    return snap.exists() && snap.data().banned === true;
+  }catch(e){
+    console.error(e);
+    return false;
+  }
+}
+
+async function ensureUserDoc(user){
+  const ref=doc(db,"users",user.uid);
+  const snap=await getDoc(ref);
+  if(!snap.exists()){
+    const username=(user.email||"user").split("@")[0].toLowerCase().replace(/[^a-z0-9_]/g,"");
+    await setDoc(ref,{uid:user.uid,name:user.displayName||username||"User",username,email:user.email||"",bio:"Hey there, I am using Kalb Message.",avatarEmoji:"😀",avatarColor:"purpleBlue",following:[],followers:[],createdAt:serverTimestamp(),updatedAt:serverTimestamp()});
+  }
+}
+async function setOnline(isOnline){
+  if(!currentUser) return;
+  await setDoc(doc(db,"onlineUsers",currentUser.uid),{uid:currentUser.uid,email:currentUser.email||"",online:isOnline,lastSeen:serverTimestamp()},{merge:true});
+}
+
+window.googleLogin=async function(){
+  try{showStatus("authStatus","Opening Google login...");const r=await signInWithPopup(auth,provider);showStatus("authStatus","Login successful: "+(r.user.email||"Google user"))}
+  catch(e){console.error(e);showStatus("authStatus",(e.code?e.code+": ":"")+e.message,true)}
+}
+window.emailSignup=async function(){
+  try{
+    const email=authEmail.value.trim(),pass=authPassword.value.trim();
+    if(!email||!pass)return showStatus("authStatus","Enter email and password.",true);
+    if(pass.length<6)return showStatus("authStatus","Password must be at least 6 characters.",true);
+    showStatus("authStatus","Creating account...");
+    const r=await createUserWithEmailAndPassword(auth,email,pass);
+    showStatus("authStatus","Account created: "+(r.user.email||email));
+  }catch(e){console.error(e);showStatus("authStatus",(e.code?e.code+": ":"")+e.message,true)}
+}
+window.emailLogin=async function(){
+  try{
+    const email=authEmail.value.trim(),pass=authPassword.value.trim();
+    if(!email||!pass)return showStatus("authStatus","Enter email and password.",true);
+    showStatus("authStatus","Logging in...");
+    const r=await signInWithEmailAndPassword(auth,email,pass);
+    showStatus("authStatus","Login successful: "+(r.user.email||email));
+  }catch(e){console.error(e);showStatus("authStatus",(e.code?e.code+": ":"")+e.message,true)}
+}
+window.logout=async function(){
+  try{await setOnline(false);await signOut(auth)}
+  catch(e){alert(e.message)}
+}
+
+onAuthStateChanged(auth,async function(user){
+  currentUser=user;
+  if(user){
+    openLoggedInApp();
+    homeUser.innerText="Logged in as "+(user.email||"User");
+    try{await ensureUserDoc(user)}catch(e){console.error("User profile failed:",e)}
+    try{
+      const meSnap = await getDoc(doc(db,"users",user.uid));
+      if(meSnap.exists() && meSnap.data().banned === true){
+        alert("Your account is banned by admin.");
+        await signOut(auth);
+        return;
+      }
+    }catch(e){console.error("Ban check failed:",e)}
+    try{await setOnline(true)}catch(e){console.error("Online failed:",e)}
+    try{listenUsers()}catch(e){console.error(e)}
+    try{listenOnlineUsers()}catch(e){console.error(e)}
+    try{listenChats()}catch(e){console.error(e)}
+    try{listenPosts()}catch(e){console.error(e)}
+    try{listenGroups()}catch(e){console.error(e)}
+    try{listenReports()}catch(e){console.error(e)}
+    try{listenAnnouncements()}catch(e){console.error(e)}
+    try{listenCallRequests()}catch(e){console.error(e)}
+    const adminAllowed = (user.email || "").toLowerCase() === ADMIN_EMAIL.toLowerCase();
+    document.querySelectorAll(".admin-nav").forEach(n=>n.classList.toggle("hidden", !adminAllowed));
+    const pab = document.getElementById("profileAdminBtn");
+    if(pab) pab.classList.toggle("hidden", !adminAllowed);
+    try{loadProfile()}catch(e){console.error(e)}
+  }else{
+    document.querySelectorAll(".page").forEach(p=>p.classList.remove("active"));
+    authPage.classList.add("active");
+    bottomNav.style.display="none";
+    document.querySelectorAll(".admin-nav").forEach(n=>n.classList.add("hidden"));
+    const pab = document.getElementById("profileAdminBtn");
+    if(pab) pab.classList.add("hidden");
+  }
+});
+window.addEventListener("beforeunload",function(){if(currentUser)setOnline(false)});
+
+function openLoggedInApp(){
+  document.querySelectorAll(".page").forEach(p=>p.classList.remove("active"));
+  homePage.classList.add("active");
+  bottomNav.style.display="flex";
+  document.querySelectorAll(".nav").forEach(n=>n.classList.remove("active"));
+  document.querySelector(".nav").classList.add("active");
+}
+window.openPage=function(id,navEl){
+  if(!currentUser&&id!=="authPage")return alert("Please login first.");
+  document.querySelectorAll(".page").forEach(p=>p.classList.remove("active"));
+  document.getElementById(id).classList.add("active");
+  if(navEl){document.querySelectorAll(".nav").forEach(n=>n.classList.remove("active"));navEl.classList.add("active")}
+  if(id==="profilePage")loadProfile();
+  if(id==="usersPage")renderUsers();
+  if(id==="feedPage")renderPosts();
+  if(id==="groupsPage")renderGroups();
+  if(id==="createGroupPage")renderGroupMemberPicker();
+  if(id==="callsPage"){renderCallHistory();renderCallUsersList();}
+  if(id==="adminPage")renderAdminPanel();
+};
+
+function listenUsers(){
+  onSnapshot(collection(db,"users"),function(snapshot){
+    allUsers=[];
+    snapshot.forEach(d=>allUsers.push({uid:d.id,...d.data()}));
+    if(currentUser){
+      const fresh=allUsers.find(u=>u.uid===currentUser.uid);
+      if(fresh){currentUserProfile=fresh; loadProfile();}
+    }
+    if(document.getElementById("totalUsers"))totalUsers.innerText=allUsers.length;
+    renderUsers();
+    renderChatListCache();
+    renderPosts();
+  },function(error){
+    console.error(error);
+    if(document.getElementById("usersList"))usersList.innerHTML='<div class="card"><p class="muted">Users could not load. Check Firestore rules.</p></div>';
+  });
+}
+function listenOnlineUsers(){
+  onSnapshot(collection(db,"onlineUsers"),function(snapshot){
+    onlineMap={};let count=0;
+    snapshot.forEach(function(d){
+      const data=d.data();
+      onlineMap[data.uid]={online:data.online===true,lastSeen:data.lastSeen};
+      if(data.online===true)count++;
+    });
+    onlineUsersCount.innerText=count;
+    renderUsers();
+  });
+}
+window.renderUsers=function(){
+  const q=(document.getElementById("userSearch")?userSearch.value:"").toLowerCase();
+  const list=allUsers.filter(u=>{
+    const text=((u.name||"")+" "+(u.username||"")+" "+(u.email||"")).toLowerCase();
+    return text.includes(q);
+  });
+  if(!document.getElementById("usersList"))return;
+  if(!list.length){usersList.innerHTML='<div class="card empty">No users found.</div>';return}
+  usersList.innerHTML=list.map(u=>{
+    const isOnline=onlineMap[u.uid];
+    const isMe=currentUser && u.uid===currentUser.uid;
+    const followers=Array.isArray(u.followers)?u.followers:[];
+    const following=Array.isArray(u.following)?u.following:[];
+    const amFollowing=currentUser && followers.includes(currentUser.uid);
+    return `<div class="card user-row">
+      <div class="avatar" style="background:${avatarStyle(u.avatarColor)}">${safe(u.avatarEmoji||initials(u.name,u.email))}</div>
+      <div class="user-info">
+        <h3>${safe(u.name||"User")} ${isOnline?'<span class="online-dot"></span>':''}</h3>
+        <p>@${safe(u.username||"user")} • ${safe(u.email||"")}</p>
+        <p class="muted" style="margin-top:5px">${safe(lastSeenText(u.uid))}</p>
+        <p class="follow-mini">${followers.length} followers • ${following.length} following</p>
+      </div>
+      <div class="actions">
+        <button class="btn small" onclick='viewUserProfile("${u.uid}")'>Profile</button>
+        ${!isMe?`<button class="btn small ${amFollowing?'follow-btn-on':''}" onclick='toggleFollowUser("${u.uid}")'>${amFollowing?'Following':'Follow'}</button>`:''}
+        <button class="btn small" onclick='openPrivateChat("${u.uid}")'>Message</button>
+        <button class="btn small green" onclick='requestCallToUser("${u.uid}")'>Call</button>
+      </div>
+    </div>`;
+  }).join("");
+};
+
+
+window.viewUserProfile=async function(uid){
+  try{
+    if(!uid)return alert("User profile not found. Refresh once.");
+    let u=allUsers.find(x=>x.uid===uid);
+    if(!u){
+      const snap=await getDoc(doc(db,"users",uid));
+      if(snap.exists())u={uid:snap.id,...snap.data()};
+    }
+    if(!u)return alert("User not found.");
+    viewedProfileUser=u;
+    if(document.getElementById("viewProfileAvatar")){
+      viewProfileAvatar.innerText=u.avatarEmoji||initials(u.name,u.email);
+      viewProfileAvatar.style.background=avatarStyle(u.avatarColor);
+    }
+    if(document.getElementById("viewProfileName"))viewProfileName.innerText=u.name||"User";
+    if(document.getElementById("viewProfileUsername"))viewProfileUsername.innerText="@"+(u.username||"user");
+    if(document.getElementById("viewProfileEmail"))viewProfileEmail.innerText=u.email||"";
+    if(document.getElementById("viewProfileBio"))viewProfileBio.innerText=u.bio||"";
+    if(document.getElementById("viewProfileLastSeen"))viewProfileLastSeen.innerText=lastSeenText(u.uid);
+    const followers=Array.isArray(u.followers)?u.followers:[];
+    const following=Array.isArray(u.following)?u.following:[];
+    if(document.getElementById("viewFollowersCount"))viewFollowersCount.innerText=followers.length;
+    if(document.getElementById("viewFollowingCount"))viewFollowingCount.innerText=following.length;
+    if(document.getElementById("viewPostsCount"))viewPostsCount.innerText=allPosts.filter(p=>p.uid===u.uid).length;
+    if(document.getElementById("viewFollowList")){
+      const followerNames=followers.slice(0,5).map(fid=>{const fu=allUsers.find(x=>x.uid===fid);return fu?(fu.name||fu.email||"User"):"User";});
+      viewFollowList.innerText=followerNames.length?"Followers: "+followerNames.join(", "):"No followers yet.";
+    }
+    updateViewedFollowButton();
+    openPage("viewProfilePage");
+  }catch(err){
+    console.error("viewUserProfile failed",err);
+    alert("Profile open failed: "+(err.message||err));
+  }
+};
+
+
+
+
+
+
+
+
+
+window.toggleFollowUser=async function(uid){
+  try{
+    if(!currentUser)return alert("Please login first.");
+    if(!uid)return alert("User not found.");
+    if(uid===currentUser.uid)return alert("This is your own profile.");
+    const myRef=doc(db,"users",currentUser.uid);
+    const otherRef=doc(db,"users",uid);
+    const mySnap=await getDoc(myRef);
+    const otherSnap=await getDoc(otherRef);
+    const me=mySnap.exists()?mySnap.data():{};
+    const other=otherSnap.exists()?otherSnap.data():{};
+    let myFollowing=Array.isArray(me.following)?me.following:[];
+    let otherFollowers=Array.isArray(other.followers)?other.followers:[];
+    const already=myFollowing.includes(uid)||otherFollowers.includes(currentUser.uid);
+    if(already){
+      myFollowing=myFollowing.filter(x=>x!==uid);
+      otherFollowers=otherFollowers.filter(x=>x!==currentUser.uid);
+    }else{
+      myFollowing=Array.from(new Set([...myFollowing,uid]));
+      otherFollowers=Array.from(new Set([...otherFollowers,currentUser.uid]));
+    }
+    await setDoc(myRef,{following:myFollowing,updatedAt:serverTimestamp()},{merge:true});
+    await setDoc(otherRef,{followers:otherFollowers,updatedAt:serverTimestamp()},{merge:true});
+    currentUserProfile={...(currentUserProfile||{}),following:myFollowing};
+    if(viewedProfileUser && viewedProfileUser.uid===uid){
+      viewedProfileUser={...viewedProfileUser,followers:otherFollowers};
+      if(document.getElementById("viewFollowersCount"))viewFollowersCount.innerText=otherFollowers.length;
+      updateViewedFollowButton();
+    }
+    await loadProfile();
+    renderUsers();
+    renderPosts();
+    return !already;
+  }catch(err){
+    console.error("follow failed",err);
+    alert("Follow failed: "+(err.message||err));
+  }
+};
+
+function updateViewedFollowButton(){
+  if(!viewedProfileUser || !currentUser || !document.getElementById("viewFollowBtn"))return;
+  if(viewedProfileUser.uid===currentUser.uid){viewFollowBtn.classList.add("hidden");return;}
+  viewFollowBtn.classList.remove("hidden");
+  const followers=Array.isArray(viewedProfileUser.followers)?viewedProfileUser.followers:[];
+  const following=Array.isArray(currentUserProfile?.following)?currentUserProfile.following:[];
+  const isFollowing=followers.includes(currentUser.uid)||following.includes(viewedProfileUser.uid);
+  viewFollowBtn.innerText=isFollowing?"Following":"Follow";
+}
+
+window.toggleFollowViewedProfile=async function(){
+  if(!viewedProfileUser)return alert("Open a profile first.");
+  await toggleFollowUser(viewedProfileUser.uid);
+};
+
+window.followUserFromFeed=async function(uid){
+  await toggleFollowUser(uid);
+};
+
+
+window.messageViewedProfile=function(){
+  if(viewedProfileUser) openPrivateChat(viewedProfileUser.uid);
+};
+window.callViewedProfile=function(){
+  if(viewedProfileUser) requestCallToUser(viewedProfileUser.uid);
+};
+
+window.setAvatarEmoji=function(emoji){
+  profileAvatarEmoji=emoji;
+  profileAvatar.innerText=emoji;
+};
+window.setAvatarColor=function(color){
+  profileAvatarColor=color;
+  if(typeof avatarStyle === "function") profileAvatar.style.background=avatarStyle(color);
+};
+
+window.openPrivateChat=async function(uid){
+  const other=allUsers.find(u=>u.uid===uid);
+  if(!other||!currentUser)return;
+  currentChatUser=other;
+  currentChatId=chatIdFor(currentUser.uid,other.uid);
+  currentReply=null;
+  updateReplyBar();
+
+  await setDoc(doc(db,"chats",currentChatId),{
+    id:currentChatId,
+    members:[currentUser.uid,other.uid],
+    memberEmails:[currentUser.email||"",other.email||""],
+    memberNames:{[currentUser.uid]:currentUser.displayName||currentUser.email||"User",[other.uid]:other.name||"User"},
+    updatedAt:serverTimestamp(),
+    lastMessage:""
+  },{merge:true});
+
+  roomTitle.innerText=other.name||"Chat";
+  roomSub.innerText="@"+(other.username||"user")+" • "+lastSeenText(other.uid);
+  openPage("chatRoomPage");
+
+  if(unsubscribeMessages)unsubscribeMessages();
+  if(unsubscribeTyping)unsubscribeTyping();
+
+  unsubscribeTyping = onSnapshot(collection(db,"chats",currentChatId,"typing"), function(snapshot){
+    let typingUser = "";
+    snapshot.forEach(function(d){
+      const t = d.data();
+      if(t.uid !== currentUser.uid && t.typing === true){
+        const user = allUsers.find(u => u.uid === t.uid) || {};
+        typingUser = (user.name || "User") + " is typing...";
+      }
+    });
+    typingIndicator.innerText = typingUser;
+  });
+
+  const q=query(collection(db,"chats",currentChatId,"messages"),orderBy("createdAt","asc"));
+  unsubscribeMessages=onSnapshot(q,async function(snapshot){
+    messagesBox.innerHTML="";
+    const batch=writeBatch(db);
+    let needCommit=false;
+    snapshot.forEach(function(d){
+      const m=d.data();
+      const mine=m.senderUid===currentUser.uid;
+      if(!mine && m.seen!==true){batch.update(doc(db,"chats",currentChatId,"messages",d.id),{seen:true,seenAt:serverTimestamp()});needCommit=true}
+      const seenText=mine?(m.seen?"✓✓ Seen":"✓ Sent"):"";
+      messagesBox.innerHTML+=`<div class="msg ${mine?"me":""}">
+        <div class="msg-name">${mine?"You":safe(m.senderName||"User")}</div>
+        ${m.replyText?`<div class="msg-reply">${safe(m.replyText)}</div>`:""}
+        <div>${safe(m.text||"")}</div>
+        <div class="msg-time">${formatTime(m.createdAt)} ${seenText}</div>
+        <div class="msg-tools">
+          <button class="toolbtn" onclick='replyToMessage("${d.id}")'>Reply</button>
+          <button class="toolbtn" onclick='copyMessage("${d.id}")'>Copy</button>
+          ${mine?`<button class="toolbtn" onclick='editMessage("${d.id}")'>Edit</button><button class="toolbtn" onclick='deleteMessage("${d.id}")'>Delete</button>`:""}
+        </div>
+      </div>`;
+    });
+    messagesBox.scrollTop=messagesBox.scrollHeight;
+    window._lastMessages={};
+    snapshot.forEach(d=>window._lastMessages[d.id]=d.data());
+    if(needCommit){try{await batch.commit()}catch(e){console.error(e)}}
+  });
+}
+
+window.sendTypingStatus = async function(){
+  if(!currentUser || !currentChatId) return;
+  try{
+    await setDoc(doc(db,"chats",currentChatId,"typing",currentUser.uid),{
+      uid: currentUser.uid,
+      typing: true,
+      updatedAt: serverTimestamp()
+    },{merge:true});
+    clearTimeout(typingTimer);
+    typingTimer = setTimeout(async function(){
+      try{
+        await setDoc(doc(db,"chats",currentChatId,"typing",currentUser.uid),{
+          uid: currentUser.uid,
+          typing: false,
+          updatedAt: serverTimestamp()
+        },{merge:true});
+      }catch(e){}
+    },1600);
+  }catch(e){console.error(e)}
+};
+
+window.sendPrivateChat=async function(){
+  if(await isCurrentUserBanned()) return alert('Your account is banned.');
+  const text=messageInput.value.trim();
+  if(!text||!currentChatId||!currentUser)return;
+  const meSnap=await getDoc(doc(db,"users",currentUser.uid));
+  const me=meSnap.exists()?meSnap.data():{};
+  await addDoc(collection(db,"chats",currentChatId,"messages"),{
+    text,
+    replyText:currentReply?currentReply.text:"",
+    replyTo:currentReply?currentReply.id:"",
+    senderUid:currentUser.uid,
+    senderEmail:currentUser.email||"",
+    senderName:me.name||currentUser.displayName||"User",
+    createdAt:serverTimestamp(),
+    seen:false
+  });
+  await updateDoc(doc(db,"chats",currentChatId),{lastMessage:text,updatedAt:serverTimestamp(),lastSenderUid:currentUser.uid});
+  messageInput.value="";
+  currentReply=null;
+  updateReplyBar();
+  try{
+    await setDoc(doc(db,"chats",currentChatId,"typing",currentUser.uid),{uid:currentUser.uid,typing:false,updatedAt:serverTimestamp()},{merge:true});
+  }catch(e){}
+}
+
+window.pinCurrentChat=function(){
+  if(!currentChatId)return;
+  const meta=getChatMeta(currentChatId);
+  setChatMeta(currentChatId,{pinned:!meta.pinned});
+  alert(!meta.pinned?"Chat pinned.":"Chat unpinned.");
+  renderChatListCache();
+};
+window.archiveCurrentChat=function(){
+  if(!currentChatId)return;
+  const meta=getChatMeta(currentChatId);
+  setChatMeta(currentChatId,{archived:!meta.archived});
+  alert(!meta.archived?"Chat archived.":"Chat unarchived.");
+  renderChatListCache();
+};
+window.clearCurrentChat=async function(){
+  if(!currentChatId||!confirm("Clear this chat for everyone?"))return;
+  const snap=await getDocs(collection(db,"chats",currentChatId,"messages"));
+  const batch=writeBatch(db);
+  snap.forEach(d=>batch.delete(doc(db,"chats",currentChatId,"messages",d.id)));
+  await batch.commit();
+  await updateDoc(doc(db,"chats",currentChatId),{lastMessage:"Chat cleared",updatedAt:serverTimestamp()});
+};
+window.editMessage=async function(id){
+  const m=window._lastMessages&&window._lastMessages[id];
+  if(!m||m.senderUid!==currentUser.uid)return alert("You can edit only your message.");
+  const text=prompt("Edit message:",m.text||"");
+  if(text!==null&&text.trim())await updateDoc(doc(db,"chats",currentChatId,"messages",id),{text:text.trim(),edited:true,editedAt:serverTimestamp()});
+};
+
+window.replyToMessage=function(id){
+  const m=window._lastMessages&&window._lastMessages[id];
+  if(!m)return;
+  currentReply={id,text:m.text||""};
+  updateReplyBar();
+  messageInput.focus();
+}
+window.cancelReply=function(){currentReply=null;updateReplyBar()}
+function updateReplyBar(){
+  if(currentReply){replyBar.classList.add("active");replyText.innerText="Replying to: "+currentReply.text}
+  else{replyBar.classList.remove("active");replyText.innerText=""}
+}
+window.copyMessage=function(id){
+  const m=window._lastMessages&&window._lastMessages[id];
+  if(m)navigator.clipboard.writeText(m.text||"").then(()=>alert("Message copied"));
+}
+window.deleteMessage=async function(id){
+  if(!currentChatId)return;
+  if(confirm("Delete this message?"))await deleteDoc(doc(db,"chats",currentChatId,"messages",id));
+}
+
+let cachedChats=[];
+function listenChats(){
+  if(unsubscribeChats)unsubscribeChats();
+  const q=query(collection(db,"chats"),where("members","array-contains",currentUser.uid));
+  unsubscribeChats=onSnapshot(q,function(snapshot){
+    cachedChats=[];
+    unreadTotal=0;
+    snapshot.forEach(d=>{
+      const data=d.data();
+      cachedChats.push(data);
+      if(data.lastSenderUid && data.lastSenderUid!==currentUser.uid) unreadTotal++;
+    });
+    cachedChats.sort((a,b)=>{
+      const aa=a.updatedAt&&a.updatedAt.seconds?a.updatedAt.seconds:0;
+      const bb=b.updatedAt&&b.updatedAt.seconds?b.updatedAt.seconds:0;
+      return bb-aa;
+    });
+    updateUnreadBadge();
+    renderChatListCache();
+  },function(error){
+    console.error(error);
+    chatList.innerHTML='<div class="card"><p class="muted">Chats could not load. Check Firestore rules.</p></div>';
+  });
+}
+function updateUnreadBadge(){
+  if(unreadTotal>0){unreadBadge.classList.remove("hidden");unreadBadge.innerText=unreadTotal}
+  else unreadBadge.classList.add("hidden");
+}
+async function loadProfile(){
+  if(!currentUser)return;
+  const ref=doc(db,"users",currentUser.uid);
+  let snap=await getDoc(ref);
+  if(!snap.exists()){
+    await setDoc(ref,{
+      uid:currentUser.uid,
+      name:currentUser.displayName||"User",
+      username:"user_"+currentUser.uid.slice(0,5),
+      bio:"Hey there, I am using Kalb Message.",
+      email:currentUser.email||"",
+      avatarEmoji:"😀",
+      avatarColor:"purpleBlue",
+      followers:[],
+      following:[],
+      createdAt:serverTimestamp(),
+      updatedAt:serverTimestamp()
+    },{merge:true});
+    snap=await getDoc(ref);
+  }
+  const u=snap.exists()?snap.data():{};
+  currentUserProfile=u;
+  if(document.getElementById("profileAvatar")){
+    profileAvatar.innerText=u.avatarEmoji||initials(u.name,currentUser.email);
+    if(typeof avatarStyle==="function")profileAvatar.style.background=avatarStyle(u.avatarColor);
+  }
+  if(document.getElementById("profileDisplayName"))profileDisplayName.innerText=u.name||"User";
+  if(document.getElementById("profileEmail"))profileEmail.innerText=currentUser.email||"";
+  if(document.getElementById("profileJoined"))profileJoined.innerText=u.createdAt?("Joined: "+formatDate(u.createdAt)):"";
+  if(document.getElementById("profileName"))profileName.value=u.name||"";
+  if(document.getElementById("profileUsername"))profileUsername.value=u.username||"";
+  if(document.getElementById("profileBio"))profileBio.value=u.bio||"";
+  profileAvatarEmoji=u.avatarEmoji||"😀";
+  profileAvatarColor=u.avatarColor||"purpleBlue";
+  const ownFollowers=Array.isArray(u.followers)?u.followers.length:0;
+  const ownFollowing=Array.isArray(u.following)?u.following.length:0;
+  if(document.getElementById("homeUser"))homeUser.innerText=(u.name||"User")+" • @"+(u.username||"user")+" • "+ownFollowers+" followers • following "+ownFollowing;
+  if(document.getElementById("profilePostsCount"))profilePostsCount.innerText=allPosts.filter(p=>p.uid===currentUser.uid).length;
+  if(document.getElementById("profileFollowersCount"))profileFollowersCount.innerText=ownFollowers;
+  if(document.getElementById("profileFollowingCount"))profileFollowingCount.innerText=ownFollowing;
+  if(document.getElementById("profileChatsCount"))profileChatsCount.innerText=cachedChats.length;
+  if(document.getElementById("profileGroupsCount"))profileGroupsCount.innerText=allGroups.length;
+}
+window.setAvatarEmoji=function(emoji){
+  profileAvatarEmoji=emoji;
+  if(document.getElementById("profileAvatar")) profileAvatar.innerText=emoji;
+};
+window.setAvatarColor=function(color){
+  profileAvatarColor=color;
+  if(document.getElementById("profileAvatar")) profileAvatar.style.background=avatarStyle(color);
+};
+
+window.saveProfile=async function(){
+  const st=document.getElementById("profileStatus");
+  try{
+    if(st)st.innerHTML='<div class="notice">Saving profile...</div>';
+    if(!currentUser){ alert("Login first."); if(st)st.innerHTML='<div class="notice err">Login first.</div>'; return; }
+    const name=(document.getElementById("profileName")?.value||"").trim()||"User";
+    const username=(document.getElementById("profileUsername")?.value||"").trim().replace(/\s+/g,"_").toLowerCase()||("user_"+currentUser.uid.slice(0,5));
+    const bio=(document.getElementById("profileBio")?.value||"").trim()||"Hey there, I am using Kalb Message.";
+    const old=currentUserProfile||{};
+    const data={
+      uid:currentUser.uid,
+      name,
+      username,
+      bio,
+      email:currentUser.email||"",
+      avatarEmoji:profileAvatarEmoji||old.avatarEmoji||"😀",
+      avatarColor:profileAvatarColor||old.avatarColor||"purpleBlue",
+      followers:Array.isArray(old.followers)?old.followers:[],
+      following:Array.isArray(old.following)?old.following:[],
+      updatedAt:serverTimestamp()
+    };
+    if(!old.createdAt)data.createdAt=serverTimestamp();
+    await setDoc(doc(db,"users",currentUser.uid),data,{merge:true});
+    currentUserProfile={...old,...data};
+    await loadProfile();
+    if(st)st.innerHTML='<div class="notice">Profile saved ✅</div>';
+    alert("Profile saved ✅");
+  }catch(err){
+    console.error("saveProfile failed",err);
+    if(st)st.innerHTML='<div class="notice err">Profile save failed: '+safe(err.message||err)+'</div>';
+    alert("Profile save failed: "+(err.message||err));
+  }
+};
+
+
+
+
+function renderChatListCache(){
+  if(!chatList)return;
+  let list=cachedChats.slice();
+  const term=(document.getElementById("chatSearchInput")?.value||"").toLowerCase().trim();
+  list=list.filter(c=>{
+    const meta=getChatMeta(c.id);
+    if(chatFilter==="pinned" && !meta.pinned) return false;
+    if(chatFilter==="archived" && !meta.archived) return false;
+    if(chatFilter==="all" && meta.archived) return false;
+    const otherUid=(c.members||[]).find(x=>x!==currentUser.uid);
+    const other=allUsers.find(u=>u.uid===otherUid)||{};
+    if(term && !String(other.name||other.email||"").toLowerCase().includes(term) && !String(c.lastMessage||"").toLowerCase().includes(term)) return false;
+    return true;
+  });
+  list.sort((a,b)=>{
+    const ma=getChatMeta(a.id),mb=getChatMeta(b.id);
+    if(ma.pinned && !mb.pinned) return -1;
+    if(!ma.pinned && mb.pinned) return 1;
+    const aa=a.updatedAt&&a.updatedAt.seconds?a.updatedAt.seconds:0;
+    const bb=b.updatedAt&&b.updatedAt.seconds?b.updatedAt.seconds:0;
+    return bb-aa;
+  });
+  if(!list.length){chatList.innerHTML='<div class="card empty">No chats found.</div>';return}
+  chatList.innerHTML=list.map(c=>{
+    const otherUid=(c.members||[]).find(x=>x!==currentUser.uid);
+    const other=allUsers.find(u=>u.uid===otherUid)||{};
+    const meta=getChatMeta(c.id);
+    return `<div class="card chat-row" onclick='openPrivateChat("${otherUid}")'>
+      <div class="avatar" style="background:${avatarStyle(other.avatarColor)}">${safe(other.avatarEmoji||initials(other.name,other.email))}</div>
+      <div class="chat-info"><h3>${meta.pinned?"📌 ":""}${safe(other.name||"User")}</h3><p>${safe(c.lastMessage||"Open chat")}</p>${meta.archived?'<span class="badge-soft">Archived</span>':''}</div>
+      <span class="muted">${formatDate(c.updatedAt)}</span>
+    </div>`;
+  }).join("");
+}
+
+function listenGroups(){
+  if(unsubscribeGroups) unsubscribeGroups();
+  const q = query(collection(db,"groups"), where("members","array-contains",currentUser.uid));
+  unsubscribeGroups = onSnapshot(q,function(snapshot){
+    allGroups = [];
+    snapshot.forEach(d=>allGroups.push({id:d.id,...d.data()}));
+    allGroups.sort((a,b)=>{
+      const aa=a.updatedAt&&a.updatedAt.seconds?a.updatedAt.seconds:0;
+      const bb=b.updatedAt&&b.updatedAt.seconds?b.updatedAt.seconds:0;
+      return bb-aa;
+    });
+    renderGroups();
+  },function(error){
+    console.error(error);
+    groupsList.innerHTML='<div class="card"><p class="muted">Groups could not load. Check Firestore rules.</p></div>';
+  });
+}
+
+window.renderGroups = function(){
+  if(!groupsList) return;
+  if(!allGroups.length){
+    groupsList.innerHTML='<div class="card empty">No groups yet. Create your first group.</div>';
+    return;
+  }
+  groupsList.innerHTML = allGroups.map(g=>`<div class="card" onclick='openGroupRoom("${g.id}")'>
+    <div class="user-row">
+      <div class="avatar">👥</div>
+      <div class="user-info">
+        <h3>${safe(g.name||"Group")}</h3>
+        <p>${(g.members||[]).length} members • ${safe(g.lastMessage||"Open group chat")}</p>
+      </div>
+    </div>
+  </div>`).join("");
+};
+
+window.renderGroupMemberPicker = function(){
+  if(!groupMembersPick) return;
+  const list = allUsers.filter(u=>u.uid!==currentUser.uid);
+  if(!list.length){
+    groupMembersPick.innerHTML='<p class="muted">No other users found.</p>';
+    return;
+  }
+  groupMembersPick.innerHTML = list.map(u=>`<label class="group-member">
+    <input type="checkbox" value="${u.uid}">
+    <span>${safe(u.name||"User")} (@${safe(u.username||"user")})</span>
+  </label>`).join("");
+};
+
+window.createGroup = async function(){
+  if(await isCurrentUserBanned()) return alert('Your account is banned.');
+  const name = groupNameInput.value.trim();
+  const desc = groupDescInput.value.trim();
+  if(!name) return showStatus("groupCreateStatus","Enter group name.",true);
+  const picked = [...groupMembersPick.querySelectorAll("input:checked")].map(x=>x.value);
+  const members = Array.from(new Set([currentUser.uid,...picked]));
+  const meSnap = await getDoc(doc(db,"users",currentUser.uid));
+  const me = meSnap.exists()?meSnap.data():{};
+  const groupRef = await addDoc(collection(db,"groups"),{
+    name,
+    desc,
+    adminUid: currentUser.uid,
+    adminName: me.name || currentUser.displayName || "User",
+    members,
+    createdAt: serverTimestamp(),
+    updatedAt: serverTimestamp(),
+    lastMessage:""
+  });
+  groupNameInput.value="";
+  groupDescInput.value="";
+  showStatus("groupCreateStatus","Group created.");
+  openGroupRoom(groupRef.id);
+};
+
+window.openGroupRoom = async function(groupId){
+  currentGroupId = groupId;
+  currentGroup = allGroups.find(g=>g.id===groupId);
+  if(!currentGroup){
+    const snap = await getDoc(doc(db,"groups",groupId));
+    currentGroup = snap.exists()?{id:snap.id,...snap.data()}:null;
+  }
+  if(!currentGroup) return alert("Group not found.");
+  groupRoomTitle.innerText = currentGroup.name || "Group";
+  groupRoomSub.innerText = (currentGroup.members||[]).length + " members • Admin: " + (currentGroup.adminName||"User");
+  groupInfoBox.classList.add("hidden");
+  openPage("groupRoomPage");
+
+  if(unsubscribeGroupMessages) unsubscribeGroupMessages();
+  const q = query(collection(db,"groups",currentGroupId,"messages"), orderBy("createdAt","asc"));
+  unsubscribeGroupMessages = onSnapshot(q,function(snapshot){
+    groupMessagesBox.innerHTML="";
+    snapshot.forEach(d=>{
+      const m = d.data();
+      const mine = m.senderUid===currentUser.uid;
+      groupMessagesBox.innerHTML += `<div class="msg ${mine?'me':''}">
+        <div class="msg-name">${mine?'You':safe(m.senderName||'User')}</div>
+        <div>${safe(m.text||'')}</div>
+        <div class="msg-time">${formatTime(m.createdAt)}</div>
+        <div class="msg-tools">
+          <button class="toolbtn" onclick='copyGroupMessage("${d.id}")'>Copy</button>
+          ${mine||currentGroup.adminUid===currentUser.uid?`<button class="toolbtn" onclick='deleteGroupMessage("${d.id}")'>Delete</button>`:""}
+        </div>
+      </div>`;
+    });
+    groupMessagesBox.scrollTop=groupMessagesBox.scrollHeight;
+    window._lastGroupMessages={};
+    snapshot.forEach(d=>window._lastGroupMessages[d.id]=d.data());
+  });
+};
+
+window.sendGroupMessage = async function(){
+  if(await isCurrentUserBanned()) return alert('Your account is banned.');
+  const text = groupMessageInput.value.trim();
+  if(!text || !currentGroupId) return;
+  const meSnap = await getDoc(doc(db,"users",currentUser.uid));
+  const me = meSnap.exists()?meSnap.data():{};
+  await addDoc(collection(db,"groups",currentGroupId,"messages"),{
+    text,
+    senderUid: currentUser.uid,
+    senderEmail: currentUser.email||"",
+    senderName: me.name || currentUser.displayName || "User",
+    createdAt: serverTimestamp()
+  });
+  await updateDoc(doc(db,"groups",currentGroupId),{lastMessage:text,updatedAt:serverTimestamp()});
+  groupMessageInput.value="";
+};
+
+window.showGroupInfo = function(){
+  if(!currentGroup) return;
+  const admin=currentGroup.adminUid===currentUser.uid;
+  const memberRows=(currentGroup.members||[]).map(uid=>{
+    const u=allUsers.find(x=>x.uid===uid)||{};
+    return `<div class="group-member">👤 ${safe(u.name||u.email||uid)} ${uid===currentGroup.adminUid?"• admin":""}
+      ${admin&&uid!==currentUser.uid?`<button class="toolbtn" onclick='removeGroupMember("${uid}")'>Remove</button><button class="toolbtn" onclick='promoteGroupAdmin("${uid}")'>Make Admin</button>`:""}
+    </div>`;
+  }).join("");
+  const notMembers=allUsers.filter(u=>!(currentGroup.members||[]).includes(u.uid));
+  groupInfoBox.classList.toggle("hidden");
+  groupInfoBox.innerHTML=`<h3>Group Info</h3><p class="muted">${safe(currentGroup.desc||"No description")}</p>
+    ${admin?`<input id="editGroupName" value="${safe(currentGroup.name||"Group")}" placeholder="Group name"><textarea id="editGroupDesc" placeholder="Group description">${safe(currentGroup.desc||"")}</textarea><button class="btn full" onclick="saveGroupInfo()">Save Group Info</button>`:""}
+    <h4 style="margin-top:12px">Members</h4>${memberRows}
+    <h4 style="margin-top:14px">Add New Members</h4>
+    ${notMembers.length?notMembers.map(u=>`<label class="group-member"><input type="checkbox" class="addMemberCheck" value="${u.uid}"><span>${safe(u.name||"User")} (@${safe(u.username||"user")})</span></label>`).join(""):`<p class="muted">All users are already in this group.</p>`}
+    ${notMembers.length?`<button class="btn full green" onclick="addSelectedMembersToGroup()">Add Selected Members</button>`:""}
+    ${admin?`<button class="btn red full" onclick="deleteGroup()">Delete Group</button>`:""}`;
+};
+
+window.addSelectedMembersToGroup = async function(){
+  if(!currentGroup || !currentGroupId) return;
+  const picked = [...document.querySelectorAll(".addMemberCheck:checked")].map(x=>x.value);
+  if(!picked.length) return alert("Select at least one user.");
+  const members = Array.from(new Set([...(currentGroup.members||[]), ...picked]));
+  await updateDoc(doc(db,"groups",currentGroupId),{members,updatedAt:serverTimestamp()});
+  currentGroup.members = members;
+  alert("Members added.");
+  showGroupInfo();
+};
+
+
+window.saveGroupInfo=async function(){
+  if(!currentGroup||currentGroup.adminUid!==currentUser.uid)return alert("Only group admin can edit.");
+  const name=editGroupName.value.trim()||"Group";
+  const desc=editGroupDesc.value.trim();
+  await updateDoc(doc(db,"groups",currentGroupId),{name,desc,updatedAt:serverTimestamp()});
+  currentGroup.name=name;currentGroup.desc=desc;groupRoomTitle.innerText=name;
+  alert("Group info updated.");
+};
+window.removeGroupMember=async function(uid){
+  if(!currentGroup||currentGroup.adminUid!==currentUser.uid)return alert("Only group admin can remove.");
+  const members=(currentGroup.members||[]).filter(x=>x!==uid);
+  await updateDoc(doc(db,"groups",currentGroupId),{members,updatedAt:serverTimestamp()});
+  currentGroup.members=members;showGroupInfo();
+};
+window.promoteGroupAdmin=async function(uid){
+  if(!currentGroup||currentGroup.adminUid!==currentUser.uid)return alert("Only group admin can promote.");
+  const u=allUsers.find(x=>x.uid===uid)||{};
+  await updateDoc(doc(db,"groups",currentGroupId),{adminUid:uid,adminName:u.name||u.email||"User",updatedAt:serverTimestamp()});
+  currentGroup.adminUid=uid;currentGroup.adminName=u.name||u.email||"User";showGroupInfo();
+};
+
+window.leaveGroup = async function(){
+  if(!currentGroup || !confirm("Leave this group?")) return;
+  const members = (currentGroup.members||[]).filter(uid=>uid!==currentUser.uid);
+  await updateDoc(doc(db,"groups",currentGroupId),{members,updatedAt:serverTimestamp()});
+  openPage("groupsPage");
+};
+
+window.deleteGroup = async function(){
+  if(!currentGroup || currentGroup.adminUid!==currentUser.uid) return;
+  if(confirm("Delete this group?")) {
+    await deleteDoc(doc(db,"groups",currentGroupId));
+    openPage("groupsPage");
+  }
+};
+
+window.copyGroupMessage = function(id){
+  const m = window._lastGroupMessages && window._lastGroupMessages[id];
+  if(m) navigator.clipboard.writeText(m.text||"").then(()=>alert("Message copied"));
+};
+
+window.deleteGroupMessage = async function(id){
+  if(confirm("Delete this group message?")) await deleteDoc(doc(db,"groups",currentGroupId,"messages",id));
+};
+
+
+function listenPosts(){
+  if(unsubscribePosts) unsubscribePosts();
+  const q = query(collection(db,"posts"), orderBy("createdAt","desc"));
+  unsubscribePosts = onSnapshot(q,function(snapshot){
+    allPosts = [];
+    snapshot.forEach(d => allPosts.push({id:d.id,...d.data()}));
+    renderPosts();
+  },function(error){
+    console.error(error);
+    postsBox.innerHTML = '<div class="card"><p class="muted">Posts could not load. Check Firestore rules.</p></div>';
+  });
+}
+
+window.createPost = async function(){
+  try{
+    if(await isCurrentUserBanned()) return alert('Your account is banned.');
+    if(!currentUser) return alert("Please login first.");
+    const text = (document.getElementById("postText")?.value||"").trim();
+    if(!text) return showStatus("postStatus","Write something first.",true);
+    showStatus("postStatus","Posting...");
+    const meSnap = await getDoc(doc(db,"users",currentUser.uid));
+    const me = meSnap.exists()?meSnap.data():{};
+    await addDoc(collection(db,"posts"),{
+      text,
+      uid: currentUser.uid,
+      email: currentUser.email||"",
+      name: me.name || currentUser.displayName || "User",
+      username: me.username || "user",
+      likes: [],
+      savedBy: [],
+      commentsCount: 0,
+      createdAt: serverTimestamp()
+    });
+    document.getElementById("postText").value="";
+    showStatus("postStatus","Posted ✅");
+  }catch(err){
+    console.error("createPost failed",err);
+    showStatus("postStatus","Post failed: "+(err.message||err),true);
+    alert("Post failed: "+(err.message||err));
+  }
+};
+
+window.renderPosts = function(){
+  let posts=allPosts.slice();
+  if(feedFilter==="trending"){
+    posts.sort((a,b)=>((b.likes||[]).length+(b.commentsCount||0))-((a.likes||[]).length+(a.commentsCount||0)));
+  }else if(feedFilter==="saved"){
+    posts=posts.filter(p=>(p.savedBy||[]).includes(currentUser?.uid));
+  }else if(feedFilter==="mine"){
+    posts=posts.filter(p=>p.uid===currentUser?.uid);
+  }
+  renderPostsInto("postsBox",posts);
+  renderPostsInto("homeFeedBox",posts.slice(0,5));
+};
+
+function renderPostsInto(boxId, posts){
+  const box=document.getElementById(boxId);
+  if(!box)return;
+  if(!posts || !posts.length){
+    box.innerHTML='<div class="card empty">No posts yet. Be the first to post.</div>';
+    return;
+  }
+  box.innerHTML=posts.map(p=>{
+    const liked=(p.likes||[]).includes(currentUser?.uid);
+    const saved=(p.savedBy||[]).includes(currentUser?.uid);
+    const canDelete=currentUser && p.uid===currentUser.uid;
+    const commentsCount=p.commentsCount||0;
+    const owner=allUsers.find(u=>u.uid===p.uid)||{};
+    const avatar=owner.avatarEmoji||initials(p.name,p.email);
+    const bg=typeof avatarStyle==="function"?avatarStyle(owner.avatarColor):"";
+    const canFollow=currentUser && p.uid && p.uid!==currentUser.uid;
+    const ownerFollowers=Array.isArray(owner.followers)?owner.followers:[];
+    const ownerFollowing=Array.isArray(owner.following)?owner.following:[];
+    const isFollowing=ownerFollowers.includes(currentUser?.uid)||(currentUserProfile?.following||[]).includes(p.uid);
+    return `<div class="post-box">
+      <div class="post-head">
+        <div class="avatar" onclick='viewUserProfile("${p.uid||""}")' style="cursor:pointer;background:${bg}">${safe(avatar)}</div>
+        <div class="user-info">
+          <h3>${safe(p.name||owner.name||"User")}</h3>
+          <p>@${safe(p.username||owner.username||"user")} • ${formatDate(p.createdAt)}</p>
+          <button class="feed-profile-btn" onclick='viewUserProfile("${p.uid||""}")'>View Profile</button>
+          <p class="follow-mini">${ownerFollowers.length} followers • ${ownerFollowing.length} following</p>
+        </div>
+      </div>
+      <div class="post-text" id="postText_${p.id}">${safe(p.text||"")}</div>
+      <div class="post-actions">
+        <button class="btn small ${liked?'green':''}" onclick='toggleLike("${p.id}")'>${liked?'Liked':'Like'} (${(p.likes||[]).length})</button>
+        ${canFollow?`<button class="btn small ${isFollowing?'follow-btn-on':''}" onclick='followUserFromFeed("${p.uid}")'>${isFollowing?"Following":"Follow"}</button>`:""}
+        <button class="btn small" onclick='toggleComments("${p.id}")'>Comments (${commentsCount})</button>
+        <button class="btn small ${saved?'green':''}" onclick='toggleSavePost("${p.id}")'>${saved?'Saved':'Save'}</button>
+        <button class="btn small" onclick='sharePost("${p.id}")'>Share</button>
+        ${canDelete?`<button class="btn small" onclick='editPost("${p.id}")'>Edit</button><button class="btn small red" onclick='deletePost("${p.id}")'>Delete</button>`:`<button class="btn small red" onclick='reportPost("${p.id}")'>Report</button>`}
+      </div>
+      <div id="comments_${p.id}" class="comments hidden">
+        <div id="commentList_${p.id}"></div>
+        <div class="comment-box">
+          <input id="commentInput_${p.id}" placeholder="Write a comment...">
+          <button class="btn small" onclick='addComment("${p.id}")'>Send</button>
+        </div>
+      </div>
+    </div>`;
+  }).join("");
+}
+
+
+window.renderPosts = function(){
+  let posts=allPosts.slice();
+  if(feedFilter==="trending"){
+    posts.sort((a,b)=>((b.likes||[]).length+(b.commentsCount||0))-((a.likes||[]).length+(a.commentsCount||0)));
+  }else if(feedFilter==="saved"){
+    posts=posts.filter(p=>(p.savedBy||[]).includes(currentUser?.uid));
+  }else if(feedFilter==="mine"){
+    posts=posts.filter(p=>p.uid===currentUser?.uid);
+  }
+  renderPostsInto("postsBox",posts);
+  renderPostsInto("homeFeedBox",posts.slice(0,5));
+};
+
+window.toggleLike = async function(postId){
+  const p = allPosts.find(x=>x.id===postId);
+  if(!p || !currentUser) return;
+  let likes = Array.isArray(p.likes)?p.likes:[];
+  if(likes.includes(currentUser.uid)) likes = likes.filter(x=>x!==currentUser.uid);
+  else likes.push(currentUser.uid);
+  await updateDoc(doc(db,"posts",postId),{likes});
+};
+
+window.createPostFromHome = async function(){
+  try{
+    if(!currentUser) return alert("Please login first.");
+    const home=document.getElementById("homePostText");
+    const text=(home?.value||"").trim();
+    if(!text) return alert("Write something first.");
+    const postBox=document.getElementById("postText");
+    if(postBox)postBox.value=text;
+    await createPost();
+    if(home)home.value="";
+    renderPosts();
+  }catch(err){
+    console.error("home post failed",err);
+    alert("Post failed: "+(err.message||err));
+  }
+};
+
+window.toggleSavePost = async function(postId){
+  const p = allPosts.find(x=>x.id===postId);
+  if(!p || !currentUser) return;
+  let savedBy = Array.isArray(p.savedBy)?p.savedBy:[];
+  if(savedBy.includes(currentUser.uid)) savedBy = savedBy.filter(x=>x!==currentUser.uid);
+  else savedBy.push(currentUser.uid);
+  await updateDoc(doc(db,"posts",postId),{savedBy});
+};
+
+window.sharePost = function(postId){
+  const p = allPosts.find(x=>x.id===postId);
+  if(!p) return;
+  const text = "Kalb Message Post by " + (p.name||"User") + ": " + (p.text||"");
+  navigator.clipboard.writeText(text).then(()=>alert("Post copied for sharing."));
+};
+
+window.reportPost = async function(postId){
+  if(!currentUser) return;
+  await addDoc(collection(db,"reports"),{type:"post",postId,uid:currentUser.uid,email:currentUser.email||"",createdAt:serverTimestamp()});
+  alert("Post reported.");
+};
+
+window.editPost = async function(postId){
+  const p = allPosts.find(x=>x.id===postId);
+  if(!p || p.uid!==currentUser.uid) return;
+  const text = prompt("Edit your post:", p.text||"");
+  if(text!==null && text.trim()) await updateDoc(doc(db,"posts",postId),{text:text.trim(),editedAt:serverTimestamp()});
+};
+
+window.deletePost = async function(postId){
+  if(confirm("Delete this post?")) await deleteDoc(doc(db,"posts",postId));
+};
+
+window.toggleComments = async function(postId){
+  const box = document.getElementById("comments_"+postId);
+  box.classList.toggle("hidden");
+  if(!box.classList.contains("hidden")) loadComments(postId);
+};
+
+async function loadComments(postId){
+  const q = query(collection(db,"posts",postId,"comments"), orderBy("createdAt","asc"));
+  const snapshot = await getDocs(q);
+  const list = document.getElementById("commentsList_"+postId);
+  if(!list) return;
+  list.innerHTML = "";
+  snapshot.forEach(d=>{
+    const c = d.data();
+    const canDelete = currentUser && c.uid === currentUser.uid;
+    list.innerHTML += `<div class="comment"><b>${safe(c.name||"User")}:</b> ${safe(c.text||"")} ${canDelete?`<button class="toolbtn" onclick='deleteComment("${postId}","${d.id}")'>Delete</button>`:""}</div>`;
+  });
+}
+
+window.addComment = async function(postId){
+  const input = document.getElementById("commentInput_"+postId);
+  const text = input.value.trim();
+  if(!text) return;
+  const meSnap = await getDoc(doc(db,"users",currentUser.uid));
+  const me = meSnap.exists()?meSnap.data():{};
+  await addDoc(collection(db,"posts",postId,"comments"),{
+    text,
+    uid: currentUser.uid,
+    name: me.name || currentUser.displayName || "User",
+    createdAt: serverTimestamp()
+  });
+  const p = allPosts.find(x=>x.id===postId);
+  await updateDoc(doc(db,"posts",postId),{commentsCount:(p?.commentsCount||0)+1});
+  input.value = "";
+};
+
+window.deleteComment = async function(postId,commentId){
+  if(confirm("Delete comment?")) await deleteDoc(doc(db,"posts",postId,"comments",commentId));
+};
+
+
+
+function isAdminUser(){
+  return currentUser && (currentUser.email || '').toLowerCase() === ADMIN_EMAIL.toLowerCase();
+}
+
+function listenReports(){
+  onSnapshot(collection(db,"reports"),function(snapshot){
+    allReports = [];
+    snapshot.forEach(d=>allReports.push({id:d.id,...d.data()}));
+    allReports.sort((a,b)=>{
+      const aa=a.createdAt&&a.createdAt.seconds?a.createdAt.seconds:0;
+      const bb=b.createdAt&&b.createdAt.seconds?b.createdAt.seconds:0;
+      return bb-aa;
+    });
+    renderAdminPanel();
+  },function(e){console.error(e)});
+}
+
+function listenAnnouncements(){
+  const q = query(collection(db,"announcements"), orderBy("createdAt","desc"));
+  onSnapshot(q,function(snapshot){
+    allAnnouncements = [];
+    snapshot.forEach(d=>allAnnouncements.push({id:d.id,...d.data()}));
+    renderLatestAnnouncement();
+  },function(e){console.error(e)});
+}
+
+function renderLatestAnnouncement(){
+  const latest = allAnnouncements[0];
+  let old = document.getElementById("latestAnnouncementCard");
+  if(old) old.remove();
+  if(!latest || !homePage) return;
+  const div = document.createElement("div");
+  div.className = "card";
+  div.id = "latestAnnouncementCard";
+  div.innerHTML = `<h3>📢 Admin Announcement</h3><p class="post-text">${safe(latest.text||"")}</p><p class="muted">${formatDate(latest.createdAt)}</p>`;
+  const first = homePage.querySelector(".card");
+  if(first && first.nextSibling) homePage.insertBefore(div, first.nextSibling);
+}
+
+window.renderAdminPanel = function(){
+  if(!document.getElementById("adminPage")) return;
+  if(!isAdminUser()){
+    if(adminUsersBox) adminUsersBox.innerHTML = '<p class="muted">Admin only.</p>';
+    return;
+  }
+
+  if(adminUsersBox){
+    adminUsersBox.innerHTML = allUsers.length ? allUsers.map(u=>`
+      <div class="admin-item">
+        <b>${safe(u.name||"User")}</b>
+        <p class="muted">@${safe(u.username||"user")} • ${safe(u.email||"")}</p>
+        <p class="muted">Status: ${u.banned?'Banned':'Active'}</p>
+        <div class="admin-actions">
+          <button class="btn small ${u.banned?'green':'red'}" onclick='toggleBanUser("${u.uid}", ${u.banned?'false':'true'})'>${u.banned?'Unban':'Ban'}</button>
+        </div>
+      </div>`).join("") : '<p class="muted">No users found.</p>';
+  }
+
+  if(adminReportsBox){
+    adminReportsBox.innerHTML = allReports.length ? allReports.map(r=>`
+      <div class="admin-item">
+        <b>${safe(r.type||"report")}</b>
+        <p class="muted">By: ${safe(r.email||r.uid||"unknown")}</p>
+        <p class="muted">Post: ${safe(r.postId||"")}</p>
+        <div class="admin-actions">
+          ${r.postId?`<button class="btn small red" onclick='adminDeletePost("${r.postId}")'>Delete Reported Post</button>`:""}
+          <button class="btn small" onclick='adminDeleteReport("${r.id}")'>Clear Report</button>
+        </div>
+      </div>`).join("") : '<p class="muted">No reports.</p>';
+  }
+
+  if(adminPostsBox){
+    adminPostsBox.innerHTML = allPosts.length ? allPosts.map(p=>`
+      <div class="admin-item">
+        <b>${safe(p.name||"User")}</b>
+        <p>${safe(p.text||"")}</p>
+        <p class="muted">${safe(p.email||"")}</p>
+        <button class="btn small red" onclick='adminDeletePost("${p.id}")'>Delete Post</button>
+      </div>`).join("") : '<p class="muted">No posts.</p>';
+  }
+
+  if(adminGroupsBox){
+    adminGroupsBox.innerHTML = allGroups.length ? allGroups.map(g=>`
+      <div class="admin-item">
+        <b>${safe(g.name||"Group")}</b>
+        <p class="muted">${(g.members||[]).length} members • Admin: ${safe(g.adminName||"User")}</p>
+        <button class="btn small red" onclick='adminDeleteGroup("${g.id}")'>Delete Group</button>
+      </div>`).join("") : '<p class="muted">No groups.</p>';
+  }
+};
+
+window.toggleBanUser = async function(uid,banned){
+  if(!isAdminUser()) return alert("Admin only.");
+  await setDoc(doc(db,"users",uid),{banned:banned},{merge:true});
+  renderAdminPanel();
+};
+
+window.adminDeletePost = async function(postId){
+  if(!isAdminUser()) return alert("Admin only.");
+  if(confirm("Delete this post?")) await deleteDoc(doc(db,"posts",postId));
+};
+
+window.adminDeleteGroup = async function(groupId){
+  if(!isAdminUser()) return alert("Admin only.");
+  if(confirm("Delete this group?")) await deleteDoc(doc(db,"groups",groupId));
+};
+
+window.adminDeleteReport = async function(reportId){
+  if(!isAdminUser()) return alert("Admin only.");
+  await deleteDoc(doc(db,"reports",reportId));
+};
+
+window.sendAnnouncement = async function(){
+  if(!isAdminUser()) return alert("Admin only.");
+  const text = announcementText.value.trim();
+  if(!text) return showStatus("adminStatus","Write announcement first.",true);
+  await addDoc(collection(db,"announcements"),{
+    text,
+    adminEmail: currentUser.email,
+    createdAt: serverTimestamp()
+  });
+  announcementText.value = "";
+  showStatus("adminStatus","Announcement sent.");
+};
+
+
+
+
+function getEl(id){ return document.getElementById(id); }
+function callUsersHtml(u){
+  const isMe=currentUser && u.uid===currentUser.uid;
+  const online=onlineMap[u.uid] && onlineMap[u.uid].online===true;
+  return `<div class="call-request" style="display:flex;align-items:center;justify-content:space-between;gap:10px">
+    <div style="display:flex;align-items:center;gap:10px;min-width:0">
+      <div class="avatar" style="width:42px;height:42px;font-size:18px;background:${avatarStyle(u.avatarColor)}">${safe(u.avatarEmoji||initials(u.name,u.email))}</div>
+      <div style="min-width:0"><b>${safe(u.name||u.email||"User")}</b><p class="muted">${online?"🟢 Online":"⚪ Offline"} ${u.username?" • @"+safe(u.username):""}</p></div>
+    </div>
+    ${isMe?`<span class="muted">You</span>`:`<div class="actions"><button class="btn small green" onclick='requestCallToUser("${u.uid}",true)'>Video</button><button class="btn small" onclick='requestCallToUser("${u.uid}",false)'>Voice</button></div>`}
+  </div>`;
+}
+window.renderCallUsersList=function(){
+  const box=getEl("callUsersList");
+  if(!box) return;
+  const q=(getEl("callUserSearch")?.value||"").toLowerCase();
+  const users=allUsers.filter(u=>(((u.name||"")+" "+(u.username||"")+" "+(u.email||"")).toLowerCase().includes(q))).slice(0,20);
+  box.innerHTML=users.length?users.map(callUsersHtml).join(""):`<p class="muted">No users found.</p>`;
+};
+
+window.requestCallToUser=async function(uid, videoEnabled=true){
+  try{
+    if(!currentUser)return alert("Login first.");
+    const target=allUsers.find(u=>u.uid===uid);
+    if(!target)return alert("User not found.");
+    await createRoom(videoEnabled, false);
+    const meSnap=await getDoc(doc(db,"users",currentUser.uid));
+    const me=meSnap.exists()?meSnap.data():{};
+    await addDoc(collection(db,"callRequests"),{
+      roomId: currentRoomId,
+      callType: videoEnabled?"video":"voice",
+      fromUid:currentUser.uid,
+      fromName:me.name||currentUser.displayName||"User",
+      fromEmail:currentUser.email||"",
+      toUid:uid,
+      toName:target.name||target.email||"User",
+      status:"ringing",
+      createdAt:serverTimestamp()
+    });
+    openPage("callsPage");
+    callMsg((videoEnabled?"Video":"Voice")+" call sent to "+(target.name||target.email||"user")+". Waiting for answer... Room ID: "+currentRoomId);
+  }catch(e){console.error(e);alert("Call failed: "+(e.message||e));}
+};
+
+function listenCallRequests(){
+  if(!currentUser)return;
+  if(unsubscribeCallRequests)unsubscribeCallRequests();
+  if(unsubscribeOutgoingCalls)unsubscribeOutgoingCalls();
+  const incoming=query(collection(db,"callRequests"),where("toUid","==",currentUser.uid));
+  unsubscribeCallRequests=onSnapshot(incoming,function(snapshot){
+    const rows=[];
+    snapshot.forEach(d=>{const c=d.data(); if(c.status==="ringing")rows.push({id:d.id,...c});});
+    const box=getEl("realCallRequestsBox");
+    if(!box)return;
+    box.innerHTML=rows.map(c=>`<div class="call-request">
+      <b>Incoming ${safe(c.callType||"video")} call from ${safe(c.fromName||"User")}</b>
+      <p class="muted">Room: ${safe(c.roomId||"")} • ${safe(c.fromEmail||"")}</p>
+      <div class="actions">
+        <button class="btn small green" onclick='acceptCallRequest("${c.id}")'>Accept</button>
+        <button class="btn small red" onclick='rejectCallRequest("${c.id}")'>Reject</button>
+      </div>
+    </div>`).join("");
+    if(rows.length){
+      incomingCallBox.classList.add("active");
+      incomingCallText.innerText="Incoming call from "+(rows[0].fromName||"User");
+    } else incomingCallBox.classList.remove("active");
+  },function(e){console.error(e);});
+
+  const outgoing=query(collection(db,"callRequests"),where("fromUid","==",currentUser.uid));
+  unsubscribeOutgoingCalls=onSnapshot(outgoing,function(snapshot){
+    snapshot.docChanges().forEach(ch=>{
+      const c=ch.doc.data();
+      if(c.status==="rejected") callMsg("Call rejected by "+(c.toName||"user"), true);
+      if(c.status==="accepted") callMsg("Call accepted. Connecting room: "+(c.roomId||currentRoomId)+". Keep this page open until Other User video appears.");
+    });
+  },function(e){console.error(e);});
+}
+
+window.acceptCallRequest=async function(id){
+  try{
+    const ref=doc(db,"callRequests",id);
+    const snap=await getDoc(ref);
+    if(!snap.exists()) return alert("Call request not found.");
+    const c=snap.data();
+    await updateDoc(ref,{status:"accepted",acceptedAt:serverTimestamp()});
+    incomingCallBox.classList.remove("active");
+    openPage("callsPage");
+    if(c.roomId){
+      callRoomId.value=String(c.roomId).toUpperCase();
+      await joinCallRoom();
+    } else {
+      callMsg("Accepted, but Room ID is missing. Ask caller to create room again.", true);
+    }
+  }catch(e){console.error(e);alert("Accept failed: "+(e.message||e));}
+};
+window.rejectCallRequest=async function(id){
+  try{await updateDoc(doc(db,"callRequests",id),{status:"rejected",rejectedAt:serverTimestamp()});incomingCallBox.classList.remove("active");}
+  catch(e){alert("Reject failed: "+(e.message||e));}
+};
+
+function callMsg(text,error=false){
+  callStatus.className="notice "+(error?"err":"");
+  callStatus.innerText=text;
+}
+function startCallTimer(){
+  callStartTime = Date.now();
+  clearInterval(callTimerInterval);
+  callTimerInterval = setInterval(function(){
+    const s = Math.floor((Date.now()-callStartTime)/1000);
+    const m = String(Math.floor(s/60)).padStart(2,"0");
+    const sec = String(s%60).padStart(2,"0");
+    callTimer.innerText = "Call timer: " + m + ":" + sec;
+  },1000);
+}
+function stopCallTimer(){
+  clearInterval(callTimerInterval);
+  callTimerInterval = null;
+}
+function addCallHistory(type,status){
+  const h = JSON.parse(localStorage.getItem("kalbCallHistory")||"[]");
+  h.unshift({type,status,time:new Date().toLocaleString(),room:currentRoomId||""});
+  localStorage.setItem("kalbCallHistory",JSON.stringify(h.slice(0,20)));
+  renderCallHistory();
+}
+window.renderCallHistory = function(){
+  const box = document.getElementById("callHistoryBox");
+  if(!box) return;
+  const h = JSON.parse(localStorage.getItem("kalbCallHistory")||"[]");
+  box.innerHTML = h.length ? h.map(x=>`<div class="call-history-item"><b>${safe(x.type)}</b> • ${safe(x.status)}<br><span class="muted">${safe(x.time)} ${x.room?("• Room "+safe(x.room)):""}</span></div>`).join("") : "<p class='muted'>No calls yet.</p>";
+};
+window.fakeIncomingCall = function(){
+  incomingCallBox.classList.add("active");
+  incomingCallText.innerText = "Incoming call from Test User";
+  addCallHistory("Incoming","Ringing");
+};
+window.acceptIncomingCall = async function(){
+  try{
+    const qSnap = await getDocs(query(collection(db,"callRequests"),where("toUid","==",currentUser.uid),where("status","==","ringing")));
+    if(!qSnap.empty){ return acceptCallRequest(qSnap.docs[0].id); }
+  }catch(e){console.error(e)}
+  incomingCallBox.classList.remove("active");
+  callMsg("Incoming call accepted. Paste a Room ID or ask the caller to call again.");
+  startCallTimer();
+  addCallHistory("Incoming","Accepted");
+};
+window.rejectIncomingCall = function(){
+  incomingCallBox.classList.remove("active");
+  callMsg("Incoming call rejected.");
+  addCallHistory("Incoming","Rejected");
+};
+
+function safeVideoPlay(videoEl){
+  if(!videoEl) return;
+  const p = videoEl.play && videoEl.play();
+  if(p && p.catch) p.catch(()=>{});
+}
+async function addIceSafely(candidateData){
+  try{
+    if(!pc || !candidateData) return;
+    const candidate = new RTCIceCandidate(candidateData);
+    if(pc.remoteDescription && pc.remoteDescription.type){
+      await pc.addIceCandidate(candidate);
+    }else{
+      pendingRemoteCandidates.push(candidate);
+    }
+  }catch(e){ console.warn('ICE add failed', e); }
+}
+async function flushPendingIce(){
+  if(!pc || !pc.remoteDescription) return;
+  const list = pendingRemoteCandidates.slice();
+  pendingRemoteCandidates = [];
+  for(const c of list){
+    try{ await pc.addIceCandidate(c); }catch(e){ console.warn('Pending ICE failed', e); }
+  }
+}
+function attachRemoteTrack(event){
+  if(!remoteStream) remoteStream = new MediaStream();
+  if(remoteVideo && remoteVideo.srcObject !== remoteStream) remoteVideo.srcObject = remoteStream;
+  if(event.streams && event.streams[0]){
+    event.streams[0].getTracks().forEach(track=>{
+      if(!remoteStream.getTracks().some(t=>t.id===track.id)) remoteStream.addTrack(track);
+    });
+  }else if(event.track){
+    if(!remoteStream.getTracks().some(t=>t.id===event.track.id)) remoteStream.addTrack(event.track);
+  }
+  remoteVideoStarted = true;
+  safeVideoPlay(remoteVideo);
+  callMsg('Remote media connected. If video is black, ask other user to turn camera on.');
+}
+function showCallDebug(){
+  try{
+    if(!pc) return;
+    const s = 'Call status: '+pc.connectionState+' • ICE: '+pc.iceConnectionState+' • Signal: '+pc.signalingState;
+    callMsg(s);
+  }catch(e){}
+}
+
+async function prepareCall(videoEnabled){
+  if(!currentUser)throw new Error("Please login first.");
+  if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia)throw new Error("Your browser does not support camera/microphone calls.");
+  await hangupCall(false);
+  pendingRemoteCandidates=[];
+  remoteVideoStarted=false;
+  localStream=await navigator.mediaDevices.getUserMedia({audio:true,video:videoEnabled});
+  remoteStream=new MediaStream();
+  localVideo.srcObject=localStream;
+  remoteVideo.srcObject=remoteStream;
+  safeVideoPlay(localVideo);
+  safeVideoPlay(remoteVideo);
+  pc=new RTCPeerConnection(rtcServers);
+  localStream.getTracks().forEach(track=>pc.addTrack(track,localStream));
+  pc.ontrack=attachRemoteTrack;
+  pc.onconnectionstatechange=function(){ showCallDebug(); };
+  pc.oniceconnectionstatechange=function(){
+    showCallDebug();
+    if(pc && (pc.iceConnectionState==="failed" || pc.iceConnectionState==="disconnected")){
+      callMsg("Call connection problem. Try both users on the same network, or add a TURN server for full internet calling.", true);
+    }
+  };
+  pc.onsignalingstatechange=showCallDebug;
+  muteBtn.innerText="Mute Mic";
+  cameraBtn.innerText=videoEnabled?"Camera Off":"Voice Only";
+}
+async function createRoom(videoEnabled, showFinalAlert=true){
+  try{
+    await prepareCall(videoEnabled);
+    currentRoomId=Math.random().toString(36).slice(2,8).toUpperCase();
+    callRoomId.value=currentRoomId;
+    currentRoomRef=doc(db,"calls",currentRoomId);
+    const callerCandidates=collection(currentRoomRef,"callerCandidates");
+    const calleeCandidates=collection(currentRoomRef,"calleeCandidates");
+    pc.onicecandidate=function(event){if(event.candidate)addDoc(callerCandidates,event.candidate.toJSON())};
+    const offer=await pc.createOffer();
+    await pc.setLocalDescription(offer);
+    await setDoc(currentRoomRef,{roomId:currentRoomId,video:videoEnabled,createdBy:currentUser.uid,createdByEmail:currentUser.email||"",offer:{type:offer.type,sdp:offer.sdp},createdAt:serverTimestamp()});
+    const unsubRoom=onSnapshot(currentRoomRef,async function(snapshot){
+      const data=snapshot.data();
+      if(!pc||!data)return;
+      if(!pc.currentRemoteDescription&&data.answer){
+        await pc.setRemoteDescription(new RTCSessionDescription(data.answer));
+        await flushPendingIce();
+        callMsg("Connected. Waiting for remote video... Room ID: "+currentRoomId);
+      }
+    });
+    const unsubCandidates=onSnapshot(calleeCandidates,function(snapshot){
+      snapshot.docChanges().forEach(function(change){if(change.type==="added"&&pc)addIceSafely(change.doc.data())});
+    });
+    callUnsubs.push(unsubRoom,unsubCandidates);
+    callMsg(showFinalAlert?"Room created. Share this Room ID: "+currentRoomId:"Room created for direct call. Waiting for receiver...");
+    startCallTimer();
+    addCallHistory(videoEnabled?"Video Call":"Voice Call","Created");
+  }catch(e){console.error(e);callMsg(e.message||"Call create failed.",true)}
+}
+window.createVideoCall=function(){createRoom(true)}
+window.createVoiceCall=function(){createRoom(false)}
+window.joinCallRoom=async function(){
+  try{
+    if(!currentUser)return callMsg("Please login first.",true);
+    currentRoomId=callRoomId.value.trim().toUpperCase();
+    if(!currentRoomId)return callMsg("Enter a Room ID first.",true);
+    currentRoomRef=doc(db,"calls",currentRoomId);
+    const roomSnapshot=await getDoc(currentRoomRef);
+    if(!roomSnapshot.exists())return callMsg("Room not found. Check the Room ID.",true);
+    const roomData=roomSnapshot.data();
+    await prepareCall(roomData.video!==false);
+    const callerCandidates=collection(currentRoomRef,"callerCandidates");
+    const calleeCandidates=collection(currentRoomRef,"calleeCandidates");
+    pc.onicecandidate=function(event){if(event.candidate)addDoc(calleeCandidates,event.candidate.toJSON())};
+    await pc.setRemoteDescription(new RTCSessionDescription(roomData.offer));
+    await flushPendingIce();
+    const answer=await pc.createAnswer();
+    await pc.setLocalDescription(answer);
+    await updateDoc(currentRoomRef,{joinedBy:currentUser.uid,joinedByEmail:currentUser.email||"",answer:{type:answer.type,sdp:answer.sdp},joinedAt:serverTimestamp()});
+    const unsubCandidates=onSnapshot(callerCandidates,function(snapshot){
+      snapshot.docChanges().forEach(function(change){if(change.type==="added"&&pc)addIceSafely(change.doc.data())});
+    });
+    callUnsubs.push(unsubCandidates);
+    callMsg("Joined room: "+currentRoomId);
+    startCallTimer();
+    addCallHistory("Call","Joined");
+  }catch(e){console.error(e);callMsg(e.message||"Join call failed.",true)}
+}
+window.toggleMute=function(){
+  if(!localStream)return callMsg("Start or join a call first.",true);
+  const tracks=localStream.getAudioTracks();
+  if(!tracks.length)return callMsg("No microphone found.",true);
+  tracks.forEach(t=>t.enabled=!t.enabled);
+  muteBtn.innerText=tracks[0].enabled?"Mute Mic":"Unmute Mic";
+}
+window.toggleCamera=function(){
+  if(!localStream)return callMsg("Start or join a video call first.",true);
+  const tracks=localStream.getVideoTracks();
+  if(!tracks.length)return callMsg("This is a voice call. No camera track.",true);
+  tracks.forEach(t=>t.enabled=!t.enabled);
+  cameraBtn.innerText=tracks[0].enabled?"Camera Off":"Camera On";
+}
+window.hangupCall=async function(showMessage=true){
+  callUnsubs.forEach(unsub=>{try{unsub()}catch(e){}});
+  callUnsubs=[];
+  if(pc){pc.close();pc=null}
+  if(localStream){localStream.getTracks().forEach(t=>t.stop());localStream=null}
+  if(remoteStream){remoteStream.getTracks().forEach(t=>t.stop());remoteStream=null}
+  if(localVideo)localVideo.srcObject=null;
+  if(remoteVideo)remoteVideo.srcObject=null;
+  stopCallTimer();
+  if(showMessage){callMsg("Call ended.");addCallHistory("Call","Ended");}
+}
+window.quickCall=function(name){
+  openPage("callsPage");
+  callMsg("Call page opened for "+name+". Create a room and share the Room ID.");
+}
+</script>
+</body>
+</html>
